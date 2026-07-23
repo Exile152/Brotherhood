@@ -31,7 +31,9 @@ this.perk_bh_lunge <- this.inherit("scripts/skills/skill", {
 	function refreshVisibility()
 	{
 		local actor = this.getContainer() == null ? null : this.getContainer().getActor();
-		if (actor != null) actor.setDirty(true);
+		if (actor == null) return;
+		::Brotherhood.refreshLungeWeaponSkillRanges(actor);
+		actor.setDirty(true);
 	}
 
 	function onAnySkillExecutedFully( _skill, _targetTile, _targetEntity, _forFree )

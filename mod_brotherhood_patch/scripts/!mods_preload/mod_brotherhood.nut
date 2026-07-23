@@ -889,7 +889,8 @@
 	added += ::Brotherhood.addCurrentPerkTestingItemToStash("scripts/items/accessory/lionheart_potion_item", "[F6 POTION] Lionheart");
 	added += ::Brotherhood.addCurrentPerkTestingItemToStash("scripts/items/accessory/bandage_item", "[F6 CONSUMABLE] Bandage");
 	added += ::Brotherhood.addCurrentPerkTestingItemToStash("scripts/items/accessory/antidote_item", "[F6 CONSUMABLE] Antidote");
-	added += ::Brotherhood.addCurrentPerkTestingItemToStash("scripts/items/tools/smoke_bomb_item", "[F6 CONSUMABLE] Smoke Bomb");
+	added += ::Brotherhood.addCurrentPerkTestingItemToStash("scripts/items/tools/smoke_bomb_item", "[F6 CONSUMABLE] Smoke Bomb A");
+	added += ::Brotherhood.addCurrentPerkTestingItemToStash("scripts/items/tools/smoke_bomb_item", "[F6 CONSUMABLE] Smoke Bomb B");
 
 	for (local i = 0; i < 2; ++i)
 	{
@@ -2741,10 +2742,12 @@
 			_slot = this.bhNormalizeHandSlot(_slot);
 			local isHand = _slot == this.Const.ItemSlot.Mainhand || _slot == this.Const.ItemSlot.Offhand;
 			local isThrowing = ::Brotherhood.isFleshcraftThrowingWeapon(_item);
+			local isTool = ::Brotherhood.isCombatToolConsumable(_item);
 			local hasVolley = _actor != null && _actor.getSkills().hasSkill("perk.bh_volley_mastery");
+			local hasConsumableMastery = ::Brotherhood.hasConsumableMastery(_actor);
 			local nativeSlot = _item.getSlotType();
-			local result = isHand && ((isThrowing && hasVolley) || nativeSlot == _slot);
-			::logInfo("[Brotherhood][HAND ELIGIBILITY] " + _item.getName() + " requested=" + _slot + " native=" + nativeSlot + " current=" + _item.getCurrentSlotType() + " throwing=" + isThrowing + " volley=" + hasVolley + " result=" + result + ".");
+			local result = isHand && ((isThrowing && hasVolley) || (isTool && hasConsumableMastery) || nativeSlot == _slot);
+			::logInfo("[Brotherhood][HAND ELIGIBILITY] " + _item.getName() + " requested=" + _slot + " native=" + nativeSlot + " current=" + _item.getCurrentSlotType() + " throwing=" + isThrowing + " volley=" + hasVolley + " tool=" + isTool + " consumable_mastery=" + hasConsumableMastery + " result=" + result + ".");
 			return result;
 		}
 
@@ -2752,6 +2755,7 @@
 		{
 			_slot = this.bhNormalizeHandSlot(_slot);
 			if (::Brotherhood.isFleshcraftThrowingWeapon(_item)) ::Brotherhood.configureVolleyWeaponSlot(_item, _actor, _slot);
+			if (::Brotherhood.isCombatToolConsumable(_item)) ::Brotherhood.configureConsumableToolSlot(_item, _actor, _slot);
 		}
 
 		q.bhInventoryMoveResult <- function( _actor )
@@ -3011,6 +3015,7 @@
 				targetEquipped = data.inventory.equip(target);
 			}
 			::Brotherhood.resetVolleyWeaponForBag(source);
+				::Brotherhood.resetConsumableToolForBag(source);
 			local sourceBagged = targetEquipped && data.inventory.addToBag(source, targetIndex);
 			if (!targetEquipped || !sourceBagged)
 			{
@@ -3020,6 +3025,7 @@
 				if (target != null)
 				{
 					::Brotherhood.resetVolleyWeaponForBag(target);
+				::Brotherhood.resetConsumableToolForBag(target);
 					data.inventory.addToBag(target, targetIndex);
 				}
 				return this.helper_convertErrorToUIData(this.Const.CharacterScreen.ErrorCode.FailedToPutItemIntoBag);
@@ -3075,6 +3081,7 @@
 			if (target != null && !this.bhReleaseHandOccupant(data.inventory, data.entity, target, targetSlot))
 			{
 				::Brotherhood.resetVolleyWeaponForBag(source);
+				::Brotherhood.resetConsumableToolForBag(source);
 				data.inventory.addToBag(source, sourceIndex);
 				return this.helper_convertErrorToUIData(this.Const.CharacterScreen.ErrorCode.FailedToRemoveItemFromTargetSlot);
 			}
@@ -3096,12 +3103,14 @@
 			if (sourceEquipped && target != null)
 			{
 				::Brotherhood.resetVolleyWeaponForBag(target);
+				::Brotherhood.resetConsumableToolForBag(target);
 				targetBagged = data.inventory.addToBag(target, sourceIndex);
 			}
 			if (!sourceEquipped || !targetBagged)
 			{
 				if (source.isEquipped()) data.inventory.unequip(source);
 				::Brotherhood.resetVolleyWeaponForBag(source);
+				::Brotherhood.resetConsumableToolForBag(source);
 				data.inventory.addToBag(source, sourceIndex);
 				if (target != null)
 				{

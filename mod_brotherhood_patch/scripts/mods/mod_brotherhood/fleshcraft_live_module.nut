@@ -104,14 +104,14 @@ if (!("Brotherhood" in getroottable())) return;
 		"perk.bh_nerves_of_steel": ["Double soul hearted.", ["You receive " + ::MSU.Text.colorPositive("15%") + " less damage.", "Whenever you take damage, make a negative [morale check|Concept.Morale] unaffected by missing [Hitpoints|Concept.Hitpoints]. This replaces ordinary morale checks caused by taking damage."]],
 		"perk.bh_sentinel": ["Stop being foolish when I'm near.", ["Once per turn, when an enemy in your [Zone of Control|Concept.ZoneOfControl] attacks another target, immediately make a free attack against them."]],
 		"perk.bh_twin_discipline": ["Stay still while I don't.", ["Your two most recently hit enemies are marked.", "Marked enemies do not exert a [Zone of Control|Concept.ZoneOfControl] against you.", "While two enemies are marked, you deal " + ::MSU.Text.colorPositive("10%") + " more damage to both."]],
-		"perk.bh_bladed_loop": ["Wrong timing.", ["After an enemy misses you in melee, your next melee attack against a different enemy can't miss."]],
+		"perk.bh_bladed_loop": ["Wrong timing.", ["After an enemy misses you in melee, your next melee attack against a different enemy gains " + ::MSU.Text.colorPositive("+20%") + " chance to hit."]],
 		"perk.bh_aerial_dance": ["Light feet.", ["The first time each round an enemy misses you, recover " + ::MSU.Text.colorPositive("5") + " [Fatigue|Concept.Fatigue], or " + ::MSU.Text.colorPositive("10") + " if the attack missed by " + ::MSU.Text.colorPositive("5") + " or less."]],
 		"perk.bh_zenith": ["A brief light.", ["Your first melee hit against each enemy triggers a second attack."]],
 		"perk.bh_heavyweight": ["...Sting like an anvil.", ["Gain [Melee Skill|Concept.MeleeSkill] and [Ranged Skill|Concept.RangeSkill] equal to half your weapon's weight, up to " + ::MSU.Text.colorPositive("+12") + "."]],
 		"perk.bh_nidhogg": ["Gnaw and gnash.", ["After an enemy attacks you, mark them with 'Nidhogg'.", "Attacking an enemy marked with 'Nidhogg' consumes the mark and immediately repeats the attack without consuming [Action Points|Concept.ActionPoints]."]],
 		"perk.bh_ragnarok": ["Everyone here, will, DIE!", ["Unlocks the 'Ragnarok' active skill which makes your attacks cost " + ::MSU.Text.colorPositive("3") + " [Action Points|Concept.ActionPoints] and build twice their normal [Fatigue|Concept.Fatigue] until the end of your turn.", "Costs " + ::MSU.Text.colorPositive("1") + " [Action Point|Concept.ActionPoints] and builds " + ::MSU.Text.colorNegative("20") + " [Fatigue|Concept.Fatigue]."]],
 		"perk.bh_overkill": ["Make sure they die!", ["Consecutive attacks against the same enemy deal " + ::MSU.Text.colorPositive("+25%") + " damage for " + ::MSU.Text.colorPositive("2") + " turns.", "Does not stack, but another hit will reset the timer."]],
-		"perk.bh_consumable_mastery": ["Learn the art of tools and explosives.", ["Consumable skills build up " + ::MSU.Text.colorPositive("25%") + " less [Fatigue|Concept.Fatigue].", "All consumables cost " + ::MSU.Text.colorPositive("1") + " less [Action Point|Concept.ActionPoints] to a minimum of " + ::MSU.Text.colorPositive("1") + " [Action Point|Concept.ActionPoints].", "At the start of combat, consumables in your hands and bags gain " + ::MSU.Text.colorPositive("2") + " additional uses."]],
+		"perk.bh_consumable_mastery": ["Learn the art of tools and explosives.", ["Tool skills build up " + ::MSU.Text.colorPositive("25%") + " less [Fatigue|Concept.Fatigue].", "Tool skills cost " + ::MSU.Text.colorPositive("1") + " less [Action Point|Concept.ActionPoints] to a minimum of " + ::MSU.Text.colorPositive("1") + " [Action Point|Concept.ActionPoints].", "You can equip combat tools in both hands.", "At the start of combat, combat tools in your hands and bags gain " + ::MSU.Text.colorPositive("2") + " additional uses."]],
 		"perk.bh_opening_metal": ["Not for me, for the useful one!", ["After you hit an enemy, the next attack against them by another character deals " + ::MSU.Text.colorPositive("20%") + " more damage.", "Doesn't stack, but another hit with 'Opening Metal' refreshes it."]],
 		"perk.bh_aimed_sloth": ["You shall not move.", ["Any attack that inflicts at least " + ::MSU.Text.colorPositive("1") + " point of damage to [Hitpoints|Concept.Hitpoints] also builds up " + ::MSU.Text.colorPositive("10") + " additional [Fatigue|Concept.Fatigue] on the opponent.", "An opponent can only be affected by 'Aimed Sloth' once per round, no matter the source."]]
 	};
@@ -295,6 +295,32 @@ if (!("Brotherhood" in getroottable())) return;
 		&& ::Brotherhood.isFleshcraftThrowingWeapon(_offhand);
 }
 
+::Brotherhood.isCombatToolNet <- function( _item )
+{
+	if (_item == null || ::MSU.isNull(_item)) return false;
+	local id = null;
+	try { id = _item.getID(); }
+	catch (error) { id = null; }
+	return id == "tool.throwing_net" || id == "tool.reinforced_throwing_net";
+}
+
+// Bombs (not nets) in the offhand with Consumable Mastery use the same shield_icon
+// flip + right offset as Volley offhand throwing weapons.
+::Brotherhood.isConsumableMasteryBombOffhand <- function( _actor, _offhand = null )
+{
+	if (!::Brotherhood.hasConsumableMastery(_actor)) return false;
+	if (_offhand == null) _offhand = _actor.getItems().getItemAtSlot(::Const.ItemSlot.Offhand);
+	return _offhand != null && _offhand.getCurrentSlotType() == ::Const.ItemSlot.Offhand
+		&& ::Brotherhood.isCombatToolConsumable(_offhand)
+		&& !::Brotherhood.isCombatToolNet(_offhand);
+}
+
+::Brotherhood.needsDualWieldOffhandOffset <- function( _actor, _offhand = null )
+{
+	return ::Brotherhood.isVolleyOffhandThrowingWeapon(_actor, _offhand)
+		|| ::Brotherhood.isConsumableMasteryBombOffhand(_actor, _offhand);
+}
+
 ::Brotherhood.syncVolleyPortraitForBake <- function( _actor )
 {
 	if (_actor == null || ::Brotherhood.VolleyPortraitBakeDepth > 0) return false;
@@ -309,14 +335,14 @@ if (!("Brotherhood" in getroottable())) return;
 {
 	if (_actor == null || !_actor.hasSprite("shield_icon")) return false;
 	local offhand = _actor.getItems().getItemAtSlot(::Const.ItemSlot.Offhand);
-	local isVolleyThrowing = ::Brotherhood.isVolleyOffhandThrowingWeapon(_actor, offhand);
+	local needsOffset = ::Brotherhood.needsDualWieldOffhandOffset(_actor, offhand);
 	local sprite = _actor.getSprite("shield_icon");
 	local offset = _actor.getSpriteOffset("shield_icon");
-	local expectedFlip = isVolleyThrowing ? _actor.isAlliedWithPlayer() : !_actor.isAlliedWithPlayer();
-	local expectedX = isVolleyThrowing ? 32 : 0;
+	local expectedFlip = needsOffset ? _actor.isAlliedWithPlayer() : !_actor.isAlliedWithPlayer();
+	local expectedX = needsOffset ? 32 : 0;
 	local state = ::Brotherhood.getVolleyPortraitActorState(_actor);
-	local trackedStateChanged = state.ThrowingOffhand != isVolleyThrowing;
-	local wantsAlwaysApply = isVolleyThrowing;
+	local trackedStateChanged = state.ThrowingOffhand != needsOffset;
+	local wantsAlwaysApply = needsOffset;
 	local alwaysApplyChanged = state.AlwaysApplyOffset != wantsAlwaysApply;
 
 	if (alwaysApplyChanged)
@@ -333,7 +359,7 @@ if (!("Brotherhood" in getroottable())) return;
 		_actor.setSpriteOffset("shield_icon", ::createVec(expectedX, 0));
 	}
 
-	state.ThrowingOffhand = isVolleyThrowing;
+	state.ThrowingOffhand = needsOffset;
 	::Brotherhood.clearLegacyVolleyPortraitActorFields(_actor);
 	return needsRefresh;
 };
@@ -635,7 +661,10 @@ if (!("Brotherhood" in getroottable())) return;
 		if (!(profile.ID in ::Brotherhood.FleshcraftTemplates)) throw "Brotherhood authored 0M parent has no matching 0B template: " + profile.ID;
 	foreach (templateID, template in ::Brotherhood.FleshcraftTemplates)
 	{
-		if (!(templateID in ::Brotherhood.ParentProfileByID)) throw "Brotherhood authored 0B parent has no matching 0M profile: " + templateID;
+		if (!(templateID in ::Brotherhood.ParentProfileByID))
+		{
+			if (!(templateID in ::Brotherhood.DormantFleshcraftParentIDs)) throw "Brotherhood authored 0B parent has no matching 0M profile: " + templateID;
+		}
 		foreach (pool in [template.spine_pool, template.flesh_pool])
 		{
 			foreach (perkID in pool)
@@ -745,6 +774,33 @@ if (!("Brotherhood" in getroottable())) return;
 {
 	if (_skill == null || _skill.getContainer() == null || !_skill.m.IsWeaponSkill) return null;
 	return _skill.getContainer().getSkillByID("perk.bh_lunge");
+}
+
+::Brotherhood.applyLungeWeaponSkillRange <- function( _skill )
+{
+	if (_skill == null || !("m" in _skill) || !("IsWeaponSkill" in _skill.m) || !_skill.m.IsWeaponSkill) return;
+	if (::Brotherhood.isPorcupineRangedAttack(_skill)) return;
+	if (!("BH_LungeRangeBonus" in _skill.m)) _skill.m.BH_LungeRangeBonus <- 0;
+	if (_skill.m.BH_LungeRangeBonus != 0)
+	{
+		_skill.m.MaxRange -= _skill.m.BH_LungeRangeBonus;
+		_skill.m.BH_LungeRangeBonus = 0;
+	}
+	local perk = ::Brotherhood.getLungePerk(_skill);
+	if (perk != null && perk.isAvailable())
+	{
+		_skill.m.MaxRange += 1;
+		_skill.m.BH_LungeRangeBonus = 1;
+	}
+}
+
+::Brotherhood.refreshLungeWeaponSkillRanges <- function( _actor )
+{
+	if (_actor == null) return;
+	foreach (skill in _actor.getSkills().getAllSkillsOfType(::Const.SkillType.Active))
+	{
+		if (skill.m.IsWeaponSkill) ::Brotherhood.applyLungeWeaponSkillRange(skill);
+	}
 }
 
 ::Brotherhood.getNormalWeaponSkillRange <- function( _skill )
@@ -935,6 +991,177 @@ if (!("Brotherhood" in getroottable())) return;
 	return _skill.isInRange(_targetTile, userTile);
 }
 
+// Nested Tooltips treats [Text] / [Text|Id] as links. Plain names that contain
+// brackets (e.g. legacy "[LAB] Tank") must be stripped before colorizing.
+::Brotherhood.toTooltipPlainName <- function( _name )
+{
+	if (_name == null || _name == "") return "";
+	local text = "" + _name;
+	while (true)
+	{
+		local open = text.find("[");
+		if (open == null) break;
+		text = text.slice(0, open) + text.slice(open + 1);
+	}
+	while (true)
+	{
+		local close = text.find("]");
+		if (close == null) break;
+		text = text.slice(0, close) + text.slice(close + 1);
+	}
+	return text;
+}
+
+::Brotherhood.toTooltipPositiveName <- function( _name )
+{
+	local plain = ::Brotherhood.toTooltipPlainName(_name);
+	if (plain == "") return null;
+	return ::MSU.Text.colorPositive(plain);
+}
+
+// Combat tools that used to destroy on throw. They now track ammo like fire lances
+// and restock after battle via World.Assets.refillAmmo (AmmoCost = 10).
+::Brotherhood.CombatToolConsumableIDs <- {
+	"weapon.smoke_bomb": true,
+	"weapon.fire_bomb": true,
+	"weapon.daze_bomb": true,
+	"weapon.acid_flask": true,
+	"weapon.holy_water": true,
+	"tool.throwing_net": true,
+	"tool.reinforced_throwing_net": true
+};
+
+// Singular / plural ammo nouns for javelin-style "Has N <noun> left" tooltips.
+::Brotherhood.CombatToolAmmoNouns <- {
+	"weapon.smoke_bomb": ["smoke pot", "smoke pots"],
+	"weapon.fire_bomb": ["fire pot", "fire pots"],
+	"weapon.daze_bomb": ["flash pot", "flash pots"],
+	"weapon.acid_flask": ["acid flask", "acid flasks"],
+	"weapon.holy_water": ["holy water", "holy waters"],
+	"tool.throwing_net": ["net", "nets"],
+	"tool.reinforced_throwing_net": ["net", "nets"]
+};
+
+::Brotherhood.getCombatToolAmmoNoun <- function( _item, _count )
+{
+	local id = null;
+	try { id = _item.getID(); }
+	catch (error) { id = null; }
+	local pair = id != null && (id in ::Brotherhood.CombatToolAmmoNouns) ? ::Brotherhood.CombatToolAmmoNouns[id] : null;
+	if (pair == null) return _count == 1 ? "use" : "uses";
+	return _count == 1 ? pair[0] : pair[1];
+};
+
+::Brotherhood.getCombatToolAmmoLeftText <- function( _item, _ammo )
+{
+	local noun = ::Brotherhood.getCombatToolAmmoNoun(_item, _ammo);
+	if (_ammo > 0)
+		return "Has " + ::MSU.Text.colorPositive(_ammo) + " " + noun + " left";
+	local emptyNoun = ::Brotherhood.getCombatToolAmmoNoun(_item, 2);
+	return ::MSU.Text.colorNegative("No " + emptyNoun + " left");
+};
+
+::Brotherhood.CombatToolThrowSkillScripts <- [
+	"scripts/skills/actives/throw_smoke_bomb_skill",
+	"scripts/skills/actives/throw_fire_bomb_skill",
+	"scripts/skills/actives/throw_daze_bomb_skill",
+	"scripts/skills/actives/throw_acid_flask",
+	"scripts/skills/actives/throw_holy_water",
+	"scripts/skills/actives/throw_net"
+];
+
+::Brotherhood.CombatToolItemScripts <- [
+	"scripts/items/tools/smoke_bomb_item",
+	"scripts/items/tools/fire_bomb_item",
+	"scripts/items/tools/daze_bomb_item",
+	"scripts/items/tools/acid_flask_item",
+	"scripts/items/tools/holy_water_item",
+	"scripts/items/tools/throwing_net",
+	"scripts/items/tools/reinforced_throwing_net"
+];
+
+::Brotherhood.SpendingCombatToolChargeDepth <- 0;
+
+::Brotherhood.isCombatToolConsumable <- function( _item )
+{
+	if (_item == null || ::MSU.isNull(_item)) return false;
+	local id = null;
+	try { id = _item.getID(); }
+	catch (error) { id = null; }
+	return id != null && (id in ::Brotherhood.CombatToolConsumableIDs);
+};
+
+::Brotherhood.applyCombatToolAmmoTrack <- function( _item )
+{
+	if (!::Brotherhood.isCombatToolConsumable(_item)) return;
+	_item.m.ItemType = _item.m.ItemType | ::Const.Items.ItemType.Ammo;
+	_item.m.AmmoCost = 10;
+	if (_item.m.AmmoMax <= 0)
+	{
+		_item.m.AmmoMax = 1;
+		_item.m.Ammo = 1;
+	}
+	else if (_item.m.Ammo > _item.m.AmmoMax)
+	{
+		_item.m.Ammo = _item.m.AmmoMax;
+	}
+	_item.m.BH_CombatToolAmmo <- true;
+};
+
+::Brotherhood.replaceDestroyedOnUseTooltip <- function( _entries )
+{
+	if (_entries == null) return _entries;
+	local replaced = false;
+	foreach (entry in _entries)
+	{
+		if (!("text" in entry) || entry.text == null) continue;
+		local text = "" + entry.text;
+		if (text.find("destroyed on use") == null && text.find("Destroyed on use") == null) continue;
+		entry.icon <- "ui/icons/ammo.png";
+		entry.text = "Refilled after battle for " + ::MSU.Text.colorPositive("10") + " company ammo";
+		replaced = true;
+	}
+	if (!replaced)
+	{
+		_entries.push({
+			id = 6,
+			type = "text",
+			icon = "ui/icons/ammo.png",
+			text = "Refilled after battle for " + ::MSU.Text.colorPositive("10") + " company ammo"
+		});
+	}
+	return _entries;
+};
+
+// Spend one tool charge and keep the item. Returns true when unequip should be blocked.
+::Brotherhood.trySpendCombatToolCharge <- function( _item )
+{
+	if (!::Brotherhood.isCombatToolConsumable(_item)) return false;
+	::Brotherhood.applyCombatToolAmmoTrack(_item);
+	local ammo = _item.getAmmo();
+	if (ammo <= 0) return false;
+
+	_item.setAmmo(ammo - 1);
+	local actor = null;
+	if (_item.getContainer() != null) actor = _item.getContainer().getActor();
+	if (actor != null && !::MSU.isNull(actor) && actor.isAlive())
+	{
+		actor.setDirty(true);
+		::Brotherhood.logFleshcraftMechanic("COMBAT TOOL", actor, "Spent one use of " + _item.getName() + "; " + _item.getAmmo() + "/" + _item.getAmmoMax() + " remain.");
+	}
+	return true;
+};
+
+::Brotherhood.isConsumableMasterySkill <- function( _skill )
+{
+	if (_skill == null || _skill.getContainer() == null) return false;
+	if (!_skill.getContainer().hasSkill("perk.bh_consumable_mastery")) return false;
+	local item = null;
+	try { item = _skill.getItem(); }
+	catch (error) { item = null; }
+	return ::Brotherhood.isCombatToolConsumable(item);
+};
+
 ::Brotherhood.canCompareActorAlliance <- function( _actor )
 {
 	return _actor != null && _actor.isAlive() && !_actor.isDying() && _actor.isPlacedOnMap();
@@ -943,7 +1170,31 @@ if (!("Brotherhood" in getroottable())) return;
 ::Brotherhood.areActorsAllied <- function( _a, _b )
 {
 	if (!::Brotherhood.canCompareActorAlliance(_a) || !::Brotherhood.canCompareActorAlliance(_b)) return false;
-	return _a.isAlliedWith(_b);
+	try
+	{
+		return _a.isAlliedWith(_b);
+	}
+	catch (error)
+	{
+		return false;
+	}
+}
+
+::Brotherhood.collectSentinelCountersForAttack <- function( _attacker, _target )
+{
+	local sentinels = [];
+	if (_attacker == null || _target == null) return sentinels;
+	if (!::Brotherhood.canCompareActorAlliance(_attacker) || !::Brotherhood.canCompareActorAlliance(_target)) return sentinels;
+	if (::Brotherhood.areActorsAllied(_attacker, _target)) return sentinels;
+
+	foreach (entity in ::Tactical.Entities.getAllInstancesAsArray())
+	{
+		if (!::Brotherhood.canCompareActorAlliance(entity)) continue;
+		if (!::Brotherhood.areActorsAllied(entity, _target)) continue;
+		local sentinel = entity.getSkills().getSkillByID("perk.bh_sentinel");
+		if (sentinel != null) sentinels.push(sentinel);
+	}
+	return sentinels;
 }
 
 ::Brotherhood.processLungeLeaveZoneOfControlAttacks <- function( _actor, _originTile )
@@ -1101,6 +1352,57 @@ if (!("Brotherhood" in getroottable())) return;
 	if ("BH_VolleyRequestedSlot" in _item.m) delete _item.m.BH_VolleyRequestedSlot;
 	if ("BH_VolleyEquippedSlot" in _item.m) delete _item.m.BH_VolleyEquippedSlot;
 }
+
+// Consumable Mastery dual-wield: combat tools are natively Offhand-only. With the
+// perk they may also occupy Mainhand, using the same requested-slot handoff as Volley.
+::Brotherhood.hasConsumableMastery <- function( _actor )
+{
+	return _actor != null && _actor.getSkills().hasSkill("perk.bh_consumable_mastery");
+}
+
+::Brotherhood.configureConsumableToolSlot <- function( _item, _actor, _preferredSlot = null )
+{
+	if (!::Brotherhood.isCombatToolConsumable(_item) || _actor == null) return;
+	if (!::Brotherhood.hasConsumableMastery(_actor))
+	{
+		_item.m.SlotType = ::Const.ItemSlot.Offhand;
+		_item.m.BlockedSlotType = null;
+		if ("BH_ConsumableRequestedSlot" in _item.m) delete _item.m.BH_ConsumableRequestedSlot;
+		if ("BH_ConsumableEquippedSlot" in _item.m) delete _item.m.BH_ConsumableEquippedSlot;
+		return;
+	}
+	if (_preferredSlot == "mainhand") _preferredSlot = ::Const.ItemSlot.Mainhand;
+	else if (_preferredSlot == "offhand") _preferredSlot = ::Const.ItemSlot.Offhand;
+	if (_preferredSlot == ::Const.ItemSlot.Mainhand || _preferredSlot == ::Const.ItemSlot.Offhand)
+	{
+		_item.m.SlotType = _preferredSlot;
+		_item.m.BlockedSlotType = null;
+		_item.m.BH_ConsumableEquippedSlot <- _preferredSlot;
+		_item.m.BH_ConsumableRequestedSlot <- _preferredSlot;
+		return;
+	}
+	if ("BH_ConsumableEquippedSlot" in _item.m
+		&& (_item.m.BH_ConsumableEquippedSlot == ::Const.ItemSlot.Mainhand || _item.m.BH_ConsumableEquippedSlot == ::Const.ItemSlot.Offhand))
+	{
+		_item.m.SlotType = _item.m.BH_ConsumableEquippedSlot;
+		_item.m.BlockedSlotType = null;
+		return;
+	}
+	// Tools stay offhand by default; only an explicit / inferred mainhand drop switches.
+	_item.m.SlotType = ::Const.ItemSlot.Offhand;
+	_item.m.BlockedSlotType = null;
+}
+
+::Brotherhood.resetConsumableToolForBag <- function( _item )
+{
+	if (_item == null || !::Brotherhood.isCombatToolConsumable(_item)) return;
+	_item.m.SlotType = ::Const.ItemSlot.Offhand;
+	_item.m.BlockedSlotType = null;
+	if ("BH_ConsumableRequestedSlot" in _item.m) delete _item.m.BH_ConsumableRequestedSlot;
+	if ("BH_ConsumableEquippedSlot" in _item.m) delete _item.m.BH_ConsumableEquippedSlot;
+}
+
+::Brotherhood.PendingCombatToolSpendItem <- null;
 
 ::Brotherhood.hasSnappingTurtle <- function( _actor )
 {
@@ -1358,16 +1660,31 @@ if (!("Brotherhood" in getroottable())) return;
 		}}.general_querySkillTooltipData;
 	});
 
-	// Some character UI paths collapse a configured ghost ID to the base ID.
-	// Resolve that request to the actual configured effect rather than the
-	// generic Ghost Injury placeholder.
+	// Nested Tooltips / some UI paths query the base effect ID (from the script
+	// template), but configured marks rename to effects.bh_xyz.<entityId>.
+	// Resolve those base IDs to the live configured instance so tooltips keep
+	// owner names instead of falling back to an unconfigured template.
+	::Brotherhood.resolveConfiguredEffectByBaseID <- function( _skills, _baseID )
+	{
+		if (_skills == null || _baseID == null) return null;
+		local prefix = _baseID + ".";
+		local altPrefix = _baseID + "_";
+		foreach (skill in _skills)
+		{
+			if (skill == null || skill.isGarbage()) continue;
+			local id = skill.getID();
+			if (id.find(prefix) == 0 || id.find(altPrefix) == 0) return skill;
+		}
+		return null;
+	}
+
 	::Brotherhood.HooksMod.hook("scripts/skills/skill_container", function(q) {
 		q.getSkillByID = @(__original) { function getSkillByID( _id )
 		{
 			local ret = __original(_id);
-			if (ret != null || _id != "effects.bh_ghost_injury") return ret;
-			foreach (skill in this.m.Skills)
-				if (skill != null && !skill.isGarbage() && (skill.getID().find("effects.bh_ghost_injury_") == 0 || skill.getID().find("effects.bh_ghost_injury.") == 0)) return skill;
+			if (ret != null) return ret;
+			if (_id == "effects.bh_ghost_injury" || _id == "effects.bh_nidhogg")
+				return ::Brotherhood.resolveConfiguredEffectByBaseID(this.m.Skills, _id);
 			return null;
 		}}.getSkillByID;
 	});
@@ -1482,6 +1799,7 @@ if (!("Brotherhood" in getroottable())) return;
 				this.m.MaxRange = 1;
 				this.m.MaxRangeBonus = 0;
 			}
+			else ::Brotherhood.applyLungeWeaponSkillRange(this);
 		}}.onAfterUpdate;
 
 		q.getMaxRange = @(__original) { function getMaxRange()
@@ -1489,9 +1807,12 @@ if (!("Brotherhood" in getroottable())) return;
 			local ret = __original();
 			local actor = this.getContainer() == null ? null : this.getContainer().getActor();
 			if (actor != null && this.isAttack() && this.isRanged() && actor.getSkills().hasSkill("perk.bh_porcupine")) return 1;
-			if (("BH_FleshcraftSuppressLungeRange" in this.m) && this.m.BH_FleshcraftSuppressLungeRange) return ret;
-			local perk = ::Brotherhood.getLungePerk(this);
-			return perk != null && perk.isAvailable() ? ret + 1 : ret;
+			if (("BH_FleshcraftSuppressLungeRange" in this.m) && this.m.BH_FleshcraftSuppressLungeRange
+				&& ("BH_LungeRangeBonus" in this.m) && this.m.BH_LungeRangeBonus != 0)
+			{
+				return ret - this.m.BH_LungeRangeBonus;
+			}
+			return ret;
 		}}.getMaxRange;
 
 		q.getMinRange = @(__original) { function getMinRange()
@@ -1804,6 +2125,14 @@ if (!("Brotherhood" in getroottable())) return;
 				local bloodloaded = actor.getSkills().getSkillByID("perk.bh_bloodloaded");
 				if (bloodloaded != null) bloodloaded.remember(_item);
 			}
+			// Throw skills unequip Offhand by hardcode. Spend the skill's bound
+			// tool instead so a mainhand dual-wield tool is charged correctly.
+			if (::Brotherhood.SpendingCombatToolChargeDepth > 0)
+			{
+				local spend = ::Brotherhood.PendingCombatToolSpendItem;
+				if (spend == null) spend = _item;
+				if (::Brotherhood.trySpendCombatToolCharge(spend)) return false;
+			}
 			return __original(_item);
 		}}.unequip;
 
@@ -1815,12 +2144,16 @@ if (!("Brotherhood" in getroottable())) return;
 				local bloodloaded = actor.getSkills().getSkillByID("perk.bh_bloodloaded");
 				local current = this.getItemAtSlot(::Const.ItemSlot.Mainhand);
 				if (bloodloaded != null && current != null && current != _item) bloodloaded.remember(current);
-				local requestedSlot = _item != null && "BH_VolleyRequestedSlot" in _item.m ? _item.m.BH_VolleyRequestedSlot : null;
-				::Brotherhood.configureVolleyWeaponSlot(_item, actor, requestedSlot);
+				local volleySlot = _item != null && "BH_VolleyRequestedSlot" in _item.m ? _item.m.BH_VolleyRequestedSlot : null;
+				local toolSlot = _item != null && "BH_ConsumableRequestedSlot" in _item.m ? _item.m.BH_ConsumableRequestedSlot : null;
+				::Brotherhood.configureVolleyWeaponSlot(_item, actor, volleySlot);
+				::Brotherhood.configureConsumableToolSlot(_item, actor, toolSlot);
 				::Brotherhood.prepareSnappingTurtleEquip(this, actor, _item);
 			}
+			if (_item != null) ::Brotherhood.applyCombatToolAmmoTrack(_item);
 			local result = __original(_item);
 			if (_item != null && "BH_VolleyRequestedSlot" in _item.m) delete _item.m.BH_VolleyRequestedSlot;
+			if (_item != null && "BH_ConsumableRequestedSlot" in _item.m) delete _item.m.BH_ConsumableRequestedSlot;
 			if (result && actor != null)
 			{
 				::Brotherhood.refreshSnappingTurtleLoadout(actor, _item == null ? "equip" : "equip " + _item.getName());
@@ -1831,6 +2164,78 @@ if (!("Brotherhood" in getroottable())) return;
 		}}.equip;
 	});
 
+	foreach (toolScript in ::Brotherhood.CombatToolItemScripts)
+	{
+		::Brotherhood.HooksMod.hook(toolScript, function(q) {
+			q.create = @(__original) { function create()
+			{
+				__original();
+				::Brotherhood.applyCombatToolAmmoTrack(this);
+			}}.create;
+			q.onDeserialize = @(__original) { function onDeserialize( _in )
+			{
+				__original(_in);
+				::Brotherhood.applyCombatToolAmmoTrack(this);
+			}}.onDeserialize;
+			q.isAmountShown = @(__original) { function isAmountShown()
+			{
+				return this.m.AmmoMax > 0;
+			}}.isAmountShown;
+			q.getAmountString = @(__original) { function getAmountString()
+			{
+				return this.m.Ammo + "/" + this.m.AmmoMax;
+			}}.getAmountString;
+			q.getTooltip = @(__original) { function getTooltip()
+			{
+				return ::Brotherhood.replaceDestroyedOnUseTooltip(__original());
+			}}.getTooltip;
+		});
+	}
+
+	foreach (skillScript in ::Brotherhood.CombatToolThrowSkillScripts)
+	{
+		::Brotherhood.HooksMod.hook(skillScript, function(q) {
+			q.isUsable = @(__original) { function isUsable()
+			{
+				if (!__original()) return false;
+				local item = null;
+				try { item = this.getItem(); }
+				catch (error) { item = null; }
+				if (::Brotherhood.isCombatToolConsumable(item) && item.getAmmo() <= 0) return false;
+				return true;
+			}}.isUsable;
+			q.getTooltip = @(__original) { function getTooltip()
+			{
+				local ret = __original();
+				local item = null;
+				try { item = this.getItem(); }
+				catch (error) { item = null; }
+				if (::Brotherhood.isCombatToolConsumable(item) && item.getAmmoMax() > 0)
+				{
+					local ammo = item.getAmmo();
+					ret.push({
+						id = 8,
+						type = "text",
+						icon = ammo > 0 ? "ui/icons/ammo.png" : "ui/tooltips/warning.png",
+						text = ::Brotherhood.getCombatToolAmmoLeftText(item, ammo)
+					});
+				}
+				return ret;
+			}}.getTooltip;
+			q.onUse = @(__original) { function onUse( _user, _targetTile )
+			{
+				local bound = null;
+				try { bound = this.getItem(); }
+				catch (error) { bound = null; }
+				::Brotherhood.PendingCombatToolSpendItem = bound;
+				::Brotherhood.SpendingCombatToolChargeDepth += 1;
+				local ret = __original(_user, _targetTile);
+				::Brotherhood.SpendingCombatToolChargeDepth = ::Math.max(0, ::Brotherhood.SpendingCombatToolChargeDepth - 1);
+				::Brotherhood.PendingCombatToolSpendItem = null;
+				return ret;
+			}}.onUse;
+		});
+	}
 	// Character-screen helpers decide which equipped slot will be replaced before
 	// item_container.equip runs, so configure Volley before that decision too.
 	::Brotherhood.HooksMod.hook("scripts/ui/screens/character/character_screen", function(q) {
@@ -1864,6 +2269,7 @@ if (!("Brotherhood" in getroottable())) return;
 			else if (preferred == "offhand") preferred = ::Const.ItemSlot.Offhand;
 			if (!("error" in data)) ::logInfo("[Brotherhood][STASH TO HAND] " + data.sourceItem.getName() + " requested=" + (preferred == null ? "native" : preferred.tostring()) + ".");
 			if (!("error" in data)) ::Brotherhood.configureVolleyWeaponSlot(data.sourceItem, data.entity, preferred);
+			if (!("error" in data)) ::Brotherhood.configureConsumableToolSlot(data.sourceItem, data.entity, preferred);
 			if (!("error" in data)) ::Brotherhood.prepareSnappingTurtleEquip(data.inventory, data.entity, data.sourceItem);
 			if (!("error" in data)
 				&& ::Brotherhood.hasSnappingTurtle(data.entity)
@@ -1876,6 +2282,7 @@ if (!("Brotherhood" in getroottable())) return;
 			local result = __original(_data);
 			if (!("error" in data)) ::logInfo("[Brotherhood][STASH TO HAND] Result type=" + typeof result + "; final current=" + data.sourceItem.getCurrentSlotType() + ".");
 			if (!("error" in data) && "BH_VolleyRequestedSlot" in data.sourceItem.m) delete data.sourceItem.m.BH_VolleyRequestedSlot;
+			if (!("error" in data) && "BH_ConsumableRequestedSlot" in data.sourceItem.m) delete data.sourceItem.m.BH_ConsumableRequestedSlot;
 			return result;
 		}}.general_onEquipStashItem;
 
@@ -1902,13 +2309,32 @@ if (!("Brotherhood" in getroottable())) return;
 						::logInfo("[Brotherhood][NATIVE BAG EQUIP] Inferred the empty offhand for the second Volley throwing weapon.");
 					}
 				}
+				if (preferred == null && ::Brotherhood.isCombatToolConsumable(data.sourceItem) && ::Brotherhood.hasConsumableMastery(data.entity))
+				{
+					local main = data.inventory.getItemAtSlot(::Const.ItemSlot.Mainhand);
+					local off = data.inventory.getItemAtSlot(::Const.ItemSlot.Offhand);
+					// Tools default to offhand; with offhand already holding a tool,
+					// route the second into the empty mainhand.
+					if (off != null && ::Brotherhood.isCombatToolConsumable(off) && main == null)
+					{
+						preferred = ::Const.ItemSlot.Mainhand;
+						::logInfo("[Brotherhood][NATIVE BAG EQUIP] Inferred the empty mainhand for the second Consumable Mastery tool.");
+					}
+					else if (main != null && ::Brotherhood.isCombatToolConsumable(main) && off == null)
+					{
+						preferred = ::Const.ItemSlot.Offhand;
+						::logInfo("[Brotherhood][NATIVE BAG EQUIP] Inferred the empty offhand for the second Consumable Mastery tool.");
+					}
+				}
 				::logInfo("[Brotherhood][NATIVE BAG EQUIP] " + data.sourceItem.getName() + " preferred=" + (preferred == null ? "null" : preferred.tostring()) + " native=" + data.sourceItem.getSlotType() + " current=" + data.sourceItem.getCurrentSlotType() + " throwing=" + ::Brotherhood.isFleshcraftThrowingWeapon(data.sourceItem) + " volley=" + data.entity.getSkills().hasSkill("perk.bh_volley_mastery") + ".");
 				::Brotherhood.configureVolleyWeaponSlot(data.sourceItem, data.entity, preferred);
+				::Brotherhood.configureConsumableToolSlot(data.sourceItem, data.entity, preferred);
 				::Brotherhood.prepareSnappingTurtleEquip(data.inventory, data.entity, data.sourceItem);
 			}
 			local result = __original(_data);
 			if (!("error" in data)) ::logInfo("[Brotherhood][NATIVE BAG EQUIP] Result type=" + typeof result + "; final current=" + data.sourceItem.getCurrentSlotType() + ".");
 			if (!("error" in data) && "BH_VolleyRequestedSlot" in data.sourceItem.m) delete data.sourceItem.m.BH_VolleyRequestedSlot;
+			if (!("error" in data) && "BH_ConsumableRequestedSlot" in data.sourceItem.m) delete data.sourceItem.m.BH_ConsumableRequestedSlot;
 			return result;
 		}}.general_onEquipBagItem;
 	});
@@ -1946,12 +2372,23 @@ if (!("Brotherhood" in getroottable())) return;
 			{
 				_skill.m.ID = _skill.getID() + ".bh_volley_offhand";
 			}
+			// Tools are natively Offhand. Mainhand dual-wield clones need a unique
+			// ID so both throw actions appear (same collision Volley hit for throwing).
+			if (actor != null && this.getCurrentSlotType() == ::Const.ItemSlot.Mainhand
+				&& ::Brotherhood.hasConsumableMastery(actor)
+				&& ::Brotherhood.isCombatToolConsumable(this) && _skill != null)
+			{
+				local id = _skill.getID();
+				if (id.find(".bh_consumable_mainhand") == null)
+					_skill.m.ID = id + ".bh_consumable_mainhand";
+			}
 			return __original(_skill);
 		}}.addSkill;
 		q.onPutIntoBag = @(__original) { function onPutIntoBag()
 		{
 			local result = __original();
 			::Brotherhood.resetVolleyWeaponForBag(this);
+			::Brotherhood.resetConsumableToolForBag(this);
 			return result;
 		}}.onPutIntoBag;
 		q.getSlotType = @(__original) { function getSlotType()
@@ -1959,6 +2396,8 @@ if (!("Brotherhood" in getroottable())) return;
 			local current = this.getCurrentSlotType();
 			local actor = this.getContainer() == null ? null : this.getContainer().getActor();
 			if (actor != null && actor.getSkills().hasSkill("perk.bh_volley_mastery") && ::Brotherhood.isFleshcraftThrowingWeapon(this)
+				&& (current == ::Const.ItemSlot.Mainhand || current == ::Const.ItemSlot.Offhand)) return current;
+			if (actor != null && ::Brotherhood.hasConsumableMastery(actor) && ::Brotherhood.isCombatToolConsumable(this)
 				&& (current == ::Const.ItemSlot.Mainhand || current == ::Const.ItemSlot.Offhand)) return current;
 			return __original();
 		}}.getSlotType;
@@ -1981,6 +2420,12 @@ if (!("Brotherhood" in getroottable())) return;
 			::Brotherhood.finishStudentBattle();
 			return result;
 		}}.onBattleEnded;
+
+		q.setActionStateBySkill = @(__original) { function setActionStateBySkill( _activeEntity, _skill )
+		{
+			::Brotherhood.applyLungeWeaponSkillRange(_skill);
+			return __original(_activeEntity, _skill);
+		}}.setActionStateBySkill;
 	});
 
 	::Brotherhood.HooksMod.hook("scripts/entity/tactical/actor", function(q) {
@@ -2000,10 +2445,10 @@ if (!("Brotherhood" in getroottable())) return;
 		q.getActionPointCost = @(__original) { function getActionPointCost()
 		{
 			local cost = __original();
-			if (this.getContainer() == null || !this.isAttack()) return cost;
+			if (this.getContainer() == null) return cost;
 			local actor = this.getContainer().getActor();
-			if (actor != null && actor.getSkills().hasSkill("effects.bh_ragnarok")) return 3;
-			if (actor != null && actor.getSkills().hasSkill("perk.bh_consumable_mastery") && !this.m.IsWeaponSkill && this.m.ActionPointCost > 0)
+			if (actor != null && this.isAttack() && actor.getSkills().hasSkill("effects.bh_ragnarok")) return 3;
+			if (::Brotherhood.isConsumableMasterySkill(this) && this.m.ActionPointCost > 0)
 				return ::Math.max(1, cost - 1);
 			return cost;
 		}}.getActionPointCost;
@@ -2013,7 +2458,7 @@ if (!("Brotherhood" in getroottable())) return;
 			if (this.getContainer() == null) return cost;
 			local actor = this.getContainer().getActor();
 			if (actor != null && actor.getSkills().hasSkill("effects.bh_ragnarok") && this.isAttack()) return cost * 2;
-			if (actor != null && actor.getSkills().hasSkill("perk.bh_consumable_mastery") && !this.m.IsWeaponSkill && this.m.FatigueCost > 0)
+			if (::Brotherhood.isConsumableMasterySkill(this) && this.m.FatigueCost > 0)
 				return ::Math.max(0, ::Math.round(cost * 0.75));
 			return cost;
 		}}.getFatigueCost;
@@ -2024,15 +2469,14 @@ if (!("Brotherhood" in getroottable())) return;
 		{
 			local attacker = this.getContainer() == null ? null : this.getContainer().getActor();
 			local target = _targetTile != null && _targetTile.IsOccupiedByActor ? _targetTile.getEntity() : null;
+			// Snapshot before the attack resolves; a killing blow leaves the target dying and
+			// would otherwise skip Sentinel entirely via canCompareActorAlliance.
+			local sentinels = this.isAttack() ? ::Brotherhood.collectSentinelCountersForAttack(attacker, target) : [];
 			local ret = __original(_targetTile, _forFree);
-			if (ret && ::Brotherhood.canCompareActorAlliance(attacker) && ::Brotherhood.canCompareActorAlliance(target) && this.isAttack() && !::Brotherhood.areActorsAllied(attacker, target))
+			if (ret && sentinels.len() > 0 && ::Brotherhood.canCompareActorAlliance(attacker))
 			{
-				foreach (entity in ::Tactical.Entities.getAllInstancesAsArray())
-				{
-					if (!::Brotherhood.canCompareActorAlliance(entity) || !::Brotherhood.areActorsAllied(entity, target)) continue;
-					local sentinel = entity.getSkills().getSkillByID("perk.bh_sentinel");
-					if (sentinel != null) sentinel.tryCounter(attacker, target);
-				}
+				foreach (sentinel in sentinels)
+					sentinel.tryCounter(attacker, target);
 			}
 			return ret;
 		}}.use;

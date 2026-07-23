@@ -12,7 +12,11 @@ this.perk_bh_unadaptive_opening <- this.inherit("scripts/skills/skill", {
 	}
 	function isFreshTarget( _target )
 	{
-		return _target != null && _target.getHitpoints() >= _target.getHitpointsMax() && _target.getArmor() >= _target.getArmorMax();
+		if (_target == null) return false;
+		if (_target.getHitpoints() < _target.getHitpointsMax()) return false;
+		local head = this.Const.BodyPart.Head;
+		local body = this.Const.BodyPart.Body;
+		return _target.getArmor(head) >= _target.getArmorMax(head) && _target.getArmor(body) >= _target.getArmorMax(body);
 	}
 	function onAnySkillUsed( _skill, _target, _properties )
 	{

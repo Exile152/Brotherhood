@@ -1,6 +1,7 @@
 // Authored parent content only. Selection/scoring belongs to parent_resolver;
 // generic half construction belongs to fleshcraft_engine.
 ::Brotherhood.FleshcraftTemplates <- {};
+::Brotherhood.DormantFleshcraftParentIDs <- { ["dancer"] = true };
 ::Brotherhood.FleshcraftParentRegistry <- [];
 ::Brotherhood.FleshcraftPerkMeta <- {};
 ::Brotherhood.FleshcraftBackgroundMeta <- {};
@@ -209,7 +210,8 @@
 
 ::Brotherhood.FleshcraftTemplates["dancer"] <- {
 	id="dancer", name="Dancer",
-	spine_pool=["perk.bh_twin_discipline", "perk.bh_bladed_loop", "perk.bh_zenith"],
+	// Dormant parent: kept for save compatibility; not in FleshcraftParentRegistry.
+	spine_pool=["perk.bh_twin_discipline", "perk.bh_zenith"],
 	flesh_pool=["perk.dodge", "perk.bh_lightweight", "perk.bh_relentless", "perk.bh_pursuer", "perk.bh_lunge", "perk.bh_acuity", "perk.bh_aerial_dance"],
 	seats=[], parent_fit_hooks={}
 };
@@ -253,7 +255,6 @@
 	{ ID="attack_banner", Name="Attack Banner" },
 	{ ID="tank_banner", Name="Tank Banner" },
 	{ ID="tank", Name="Tank" },
-	{ ID="dancer", Name="Dancer" },
 	{ ID="fatigue_carry", Name="Fatigue Carry" },
 	{ ID="reload_ranged", Name="Reload Ranged" },
 	{ ID="tempo", Name="Tempo" }

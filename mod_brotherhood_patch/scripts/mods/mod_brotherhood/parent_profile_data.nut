@@ -150,7 +150,7 @@
 			], Alternatives=[], RoutingClaims=[]
 		},
 		{
-			SchemaVersion=1, ID="dancer", Name="Dancer", Source="0M Dancer.md", BuildSource="0B Dancer.canvas", ReviewStatus="reviewed",
+			SchemaVersion=1, ID="dancer", Name="Dancer", Source="0M Dancer.md", BuildSource="0B Dancer.canvas", ReviewStatus="inactive",
 			Classes=["initiative", "evasion"],
 			Stats=[
 				{ Name="melee_skill", IneligibleBelow=null, Bad=65.0, Acceptable=85.0, Great=90.0, Premium=95.0, Importance=2.0, Direction="higher" },

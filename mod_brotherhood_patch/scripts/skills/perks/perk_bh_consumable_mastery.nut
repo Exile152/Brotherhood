@@ -9,45 +9,54 @@ this.perk_bh_consumable_mastery <- this.inherit("scripts/skills/skill", {
 		this.m.Type = this.Const.SkillType.Perk;
 		this.m.Order = this.Const.SkillOrder.Perk;
 		this.m.IsActive = false;
-	}
-	function isConsumableItem( _item )
-	{
-		return _item != null && (_item.isItemType(this.Const.Items.ItemType.Usable) || _item.isItemType(this.Const.Items.ItemType.Tool));
+		this.m.IsHidden = true;
 	}
 	function applyStartBonus()
 	{
 		if (this.m.BonusApplied || this.getContainer() == null) return;
 		local actor = this.getContainer().getActor();
+		local boosted = 0;
 		foreach (item in actor.getItems().getAllItems())
 		{
-			if (!this.isConsumableItem(item) || !("getAmmoMax" in item) || item.getAmmoMax() <= 0) continue;
-			// Record the authored capacity so the bonus is always base + 2 rather
-			// than compounding by two on every subsequent battle.
+			if (!::Brotherhood.isCombatToolConsumable(item)) continue;
+			::Brotherhood.applyCombatToolAmmoTrack(item);
+
 			local originalMax = item.getAmmoMax();
-			this.m.BonusRecords.push({ Item = item, OriginalMax = originalMax });
+			local originalAmmo = item.getAmmo();
 			item.m.AmmoMax = originalMax + 2;
-			item.setAmmo(::Math.min(item.getAmmo() + 2, item.m.AmmoMax));
+			item.setAmmo(::Math.min(originalAmmo + 2, item.m.AmmoMax));
+			this.m.BonusRecords.push({
+				Item = item,
+				OriginalMax = originalMax,
+				OriginalAmmo = originalAmmo
+			});
+			boosted += 1;
+			::Brotherhood.logFleshcraftMechanic("CONSUMABLE MASTERY", actor, "Boosted " + item.getName() + " to " + item.getAmmo() + "/" + item.getAmmoMax() + ".");
 		}
 		this.m.BonusApplied = true;
-		::Brotherhood.logFleshcraftMechanic("CONSUMABLE MASTERY", actor, "Granted +2 uses to equipped and bagged consumables.");
+		actor.setDirty(true);
+		if (boosted == 0)
+			::Brotherhood.logFleshcraftMechanic("CONSUMABLE MASTERY", actor, "No combat tools were available to boost.");
+		else
+			::Brotherhood.logFleshcraftMechanic("CONSUMABLE MASTERY", actor, "Granted +2 uses to " + boosted + " combat tool(s).");
 	}
 	function onCombatStarted()
 	{
+		this.m.BonusRecords = [];
 		this.m.BonusApplied = false;
 		this.applyStartBonus();
 	}
 	function onCombatFinished()
 	{
-		this.m.BonusApplied = false;
 		foreach (record in this.m.BonusRecords)
 		{
 			local item = record.Item;
 			if (::MSU.isNull(item)) continue;
 			item.m.AmmoMax = record.OriginalMax;
 			item.setAmmo(::Math.min(item.getAmmo(), record.OriginalMax));
-			::Brotherhood.logFleshcraftMechanic("CONSUMABLE MASTERY", this.getContainer() == null ? null : this.getContainer().getActor(), "Restored " + item.getName() + " to its authored capacity of " + record.OriginalMax + ".");
 		}
 		this.m.BonusRecords = [];
+		this.m.BonusApplied = false;
 		this.skill.onCombatFinished();
 	}
 	function onAdded()
