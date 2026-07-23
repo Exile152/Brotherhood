@@ -1,0 +1,5 @@
+.dpf-image-overlay.bh-archetype-glow
+{
+	pointer-events: none;
+	transition: box-shadow 90ms ease-out;
+}

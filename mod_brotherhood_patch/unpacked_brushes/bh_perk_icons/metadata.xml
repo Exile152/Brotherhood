@@ -1,0 +1,6 @@
+<brush name="gfx/bh_perk_icons.png" version="17">
+  <sprite id="bh_malice" ic="FF313C58" img="skills\bh_malice.png" />
+  <sprite id="bh_asymmetry" ic="FF313C58" img="skills\bh_asymmetry.png" />
+  <sprite id="bh_omnivorous" ic="FF313C58" img="skills\bh_omnivorous.png" />
+  <sprite id="bh_ghost_pain" ic="FF313C58" img="skills\bh_ghost_pain.png" />
+</brush>

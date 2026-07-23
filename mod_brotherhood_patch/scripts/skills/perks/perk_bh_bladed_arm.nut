@@ -1,0 +1,1 @@
+this.perk_bh_bladed_arm <- this.inherit("scripts/skills/skill", {m={},function create(){this.m.ID="perk.bh_bladed_arm";this.m.Name="Bladed Arm";this.m.Description=::Brotherhood.getObsidianArchetypeTooltip(this.m.ID);this.m.Icon="ui/perks/perk_51.png";this.m.Type=this.Const.SkillType.Perk;this.m.Order=this.Const.SkillOrder.Perk;}});

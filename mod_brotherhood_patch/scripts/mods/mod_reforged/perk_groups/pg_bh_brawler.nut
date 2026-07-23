@@ -1,0 +1,1 @@
+this.pg_bh_brawler <- ::inherit(::DynamicPerks.Class.PerkGroup, {m={},function create(){this.m.ID="pg.bh_brawler";this.m.Name="Brawler";this.m.Description="An unarmed fighter who turns fatigue into force.";this.m.Icon="ui/perk_groups/rf_laborer.png";this.m.Tree=[["perk.bh_callous_hands"],[],[],["perk.bh_martial_mastery"],["perk.bh_grit"],[],[]];}});

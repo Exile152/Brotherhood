@@ -1,0 +1,1 @@
+this.pg_bh_berserker <- ::inherit(::DynamicPerks.Class.PerkGroup, {m={},function create(){this.m.ID="pg.bh_berserker";this.m.Name="Berserker";this.m.Description="A wounded killer who chains deaths into greater violence.";this.m.Icon="ui/perk_groups/rf_unstoppable.png";this.m.Tree=[["perk.adrenaline"],[],[],[],["perk.bh_rage"],["perk.berserk"],["perk.killing_frenzy"]];}});

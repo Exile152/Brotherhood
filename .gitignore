@@ -1,0 +1,72 @@
+# Private development assistants and local instructions
+.agents/
+.codex/
+.cursor/
+.claude/
+AGENTS.md
+CLAUDE.md
+CODEX.md
+BROTHERHOOD_CANON_CODE.md
+BROTHERHOOD_CURSOR_CONTEXT.md
+Claude-Fable-Advice.txt
+
+# Local editor settings
+.vscode/
+
+# Installed dependencies
+node_modules/
+
+# Temporary and generated output
+tmp/
+outputs/
+*.tmp
+*.log
+*.bak
+
+# Generated builds and archives
+*.zip
+
+# Generated parser reports
+parse_log*_out.txt
+
+# External reference projects
+_external_dynamic_perks_framework/
+_external_mod_reforged/
+
+# Local secrets
+.env
+.env.*
+
+# Windows clutter
+Thumbs.db
+Desktop.ini
+# Public repository allowlist
+#
+# This checkout contains private notes, third-party references, decompiled game
+# files, generated builds, and local development utilities. Ignore everything
+# by default, then explicitly expose only the distributable mod source and
+# public repository metadata.
+/*
+
+# Public repository metadata
+!/.gitignore
+!/README.md
+!/LICENSE
+!/CHANGELOG.md
+
+# Brotherhood source
+!/mod_brotherhood_patch/
+
+# Generated files inside the source tree
+/mod_brotherhood_patch/mod_brotherhood.zip
+/mod_brotherhood_patch/.bbbuilder/hash.json
+*.cnut
+
+# OS/editor leftovers that may appear inside otherwise allowed directories
+Thumbs.db
+Desktop.ini
+*.tmp
+*.log
+*.bak
+*.orig
+*~

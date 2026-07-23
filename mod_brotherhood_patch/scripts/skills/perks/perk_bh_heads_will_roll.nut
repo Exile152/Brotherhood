@@ -1,0 +1,6 @@
+this.perk_bh_heads_will_roll <- this.inherit("scripts/skills/skill", {
+	m = {},
+	function create() { this.m.ID = "perk.bh_heads_will_roll"; this.m.Name = "Heads Will Roll"; this.m.Description = ::Brotherhood.getExecutionerTooltip(this.m.ID); this.m.Icon = "ui/perks/perk_16.png"; this.m.Type = this.Const.SkillType.Perk; this.m.Order = this.Const.SkillOrder.Perk; this.m.IsActive = false; }
+	function onOtherActorDeath( _killer, _victim, _skill, _deathTile, _corpseTile, _fatalityType ) { local a = this.getContainer().getActor(); if (_fatalityType != this.Const.FatalityType.None && _killer != null && _killer.getID() == a.getID()) { a.setMoraleState(this.Const.MoraleState.Confident); ::Brotherhood.logExecutionerTest(a, "Heads Will Roll detected fatality type " + _fatalityType + " on " + _victim.getName() + "; became Confident."); } }
+	function onBeforeTargetHit( _skill, _target, _hitInfo ) { local a = this.getContainer().getActor(); if (_skill.isAttack() && !_skill.isRanged() && a.getMoraleState() == this.Const.MoraleState.Confident) { _hitInfo.FatalityChanceMult = 1000.0; ::Brotherhood.logExecutionerTest(a, "Heads Will Roll forced an allowed fatality roll against " + (_target == null ? "unknown target" : _target.getName()) + "."); } }
+});

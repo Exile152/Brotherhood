@@ -1,0 +1,1 @@
+this.pg_bh_nobody <- ::inherit(::DynamicPerks.Class.PerkGroup, { m={}, function create() { this.m.ID="pg.bh_nobody"; this.m.Name="Nobody"; this.m.Description="An unproven soul whose future may yet become extraordinary."; this.m.Icon="ui/perk_groups/rf_student.png"; this.m.Tree=[["perk.bh_promised_potential"],[],[],[],[],[],[]]; } });

@@ -1,0 +1,5 @@
+this.perk_bh_breach <- this.inherit("scripts/skills/skill", {
+	m={EffectIDs=["effects.shieldwall","effects.spearwall","effects.riposte","effects.return_favor","effects.rf_goad"]},
+	function create(){this.m.ID="perk.bh_breach";this.m.Name="Breach";this.m.Description=::Brotherhood.getLatestObsidianTooltip(this.m.ID);::Brotherhood.applySourcePerkIcon(this,"perk.shield_expert","ui/perks/perk_05.png");this.m.Type=this.Const.SkillType.Perk;this.m.Order=this.Const.SkillOrder.Perk;this.m.IsActive=false;}
+	function onTargetHit(_skill,_target,_part,_hp,_armor){if(_skill==null||!_skill.isAttack()||_target==null)return;local removed=[];foreach(id in this.m.EffectIDs){if(_target.getSkills().hasSkill(id)){_target.getSkills().removeByID(id);removed.push(id);}}::Brotherhood.logLatestObsidianTest("BREACH",this.getContainer().getActor(),removed.len()==0?"Hit "+_target.getName()+"; no catalogued active defense remained.":"Ended on "+_target.getName()+": "+::Brotherhood.formatIDsForLog(removed)+".");}
+});

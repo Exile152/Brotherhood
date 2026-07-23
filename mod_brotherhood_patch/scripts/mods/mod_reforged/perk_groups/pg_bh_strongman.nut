@@ -1,0 +1,1 @@
+this.pg_bh_strongman <- ::inherit(::DynamicPerks.Class.PerkGroup, {m={},function create(){this.m.ID="pg.bh_strongman";this.m.Name="Strongman";this.m.Description="An immovable wall of bone, brow, and muscle.";this.m.Icon="ui/perk_groups/rf_unstoppable.png";this.m.Tree=[[],["perk.bh_big_bones","perk.steel_brow"],["perk.bh_unmovable","perk.brawny"],[],[],[],[]];}});

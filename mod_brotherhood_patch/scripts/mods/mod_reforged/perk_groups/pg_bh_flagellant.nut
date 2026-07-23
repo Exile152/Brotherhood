@@ -1,0 +1,1 @@
+this.pg_bh_flagellant <- ::inherit(::DynamicPerks.Class.PerkGroup, {m={},function create(){this.m.ID="pg.bh_flagellant";this.m.Name="Flagellant";this.m.Description="A devotee who turns injury and pain into endurance.";this.m.Icon="ui/perk_groups/rf_pauper.png";this.m.Tree=[[],["perk.bh_hard_lesson","perk.bh_resilient"],[],[],["perk.bh_sangria"],[],["perk.bh_truthful_pain"]];}});

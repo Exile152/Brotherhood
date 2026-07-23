@@ -1,0 +1,1 @@
+this.perk_bh_use_mine <- this.inherit("scripts/skills/skill", {m={},function create(){this.m.ID="perk.bh_use_mine";this.m.Name="Use Mine";this.m.Description=::Brotherhood.getObsidianArchetypeTooltip(this.m.ID);this.m.Icon="ui/perks/perk_45.png";::Brotherhood.applyCustomPerkIcon(this);this.m.Type=this.Const.SkillType.Perk;this.m.Order=this.Const.SkillOrder.Perk;}});

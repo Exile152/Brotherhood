@@ -1,0 +1,1 @@
+this.pg_bh_impish <- ::inherit(::DynamicPerks.Class.PerkGroup, {m={},function create(){this.m.ID="pg.bh_impish";this.m.Name="Impish";this.m.Description="An evasive trickster who thrives inside enemy lines.";this.m.Icon="ui/perk_groups/rf_swift.png";this.m.Tree=[["perk.bh_little_devil"],["perk.dodge","perk.bh_not_you"],[],[],["perk.bh_duck"],["perk.bh_playful_smile"],[]];}});

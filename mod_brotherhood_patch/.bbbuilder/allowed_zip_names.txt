@@ -1,0 +1,4 @@
+mod_brotherhood
+mod_brotherhood_debug
+mod_brotherhood_debug_addon_patch
+mod_brotherhood_patch

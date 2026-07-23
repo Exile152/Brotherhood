@@ -1,0 +1,1 @@
+this.perk_bh_shock <- this.inherit("scripts/skills/skill", { function create(){this.m.ID="perk.bh_shock";this.m.Name="Shock";this.m.Description=::Brotherhood.getFleshcraftPerkTooltip(this.m.ID);::Brotherhood.applyCustomPerkIcon(this);this.m.Type=this.Const.SkillType.Perk;this.m.Order=this.Const.SkillOrder.Perk;this.m.IsActive=false;} });

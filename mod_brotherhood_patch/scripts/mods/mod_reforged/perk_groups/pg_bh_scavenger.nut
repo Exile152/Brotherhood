@@ -1,0 +1,1 @@
+this.pg_bh_scavenger <- ::inherit(::DynamicPerks.Class.PerkGroup, { m={}, function create() { this.m.ID="pg.bh_scavenger"; this.m.Name="Scavenger"; this.m.Description="A battlefield opportunist who turns the fallen's equipment against them."; this.m.Icon="ui/perk_groups/rf_pauper.png"; this.m.Tree=[[],["perk.bh_finders_keepers"],[],[],[],["perk.bh_dead_mans_arsenal"],[]]; } });

@@ -1,0 +1,1 @@
+this.perk_bh_dreadful_presence <- this.inherit("scripts/skills/skill", {m={},function create(){this.m.ID="perk.bh_dreadful_presence";this.m.Name="Dreadful Presence";this.m.Description=::Brotherhood.getObsidianArchetypeTooltip(this.m.ID);this.m.Icon="ui/perks/perk_27.png";this.m.Type=this.Const.SkillType.Perk;this.m.Order=this.Const.SkillOrder.Perk;}});

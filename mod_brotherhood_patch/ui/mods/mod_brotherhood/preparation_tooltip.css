@@ -1,0 +1,5 @@
+/* Keep Preparation's changed potion value distinct from the global nested-tooltip color. */
+.msu-nested-tooltip-source[data-msu-nested-id^="PreparationStrength"]
+{
+	color: #2D7FD8 !important;
+}
