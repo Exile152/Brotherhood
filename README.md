@@ -31,4 +31,4 @@ private tooling are intentionally excluded from this repository.
 No license has been selected yet. Unless a license is added, the source remains
 all rights reserved by default.
 
-<img width="1280" height="1920" alt="spr_baelynn_nude" src="https://github.com/user-attachments/assets/2252a3df-eae9-47c3-83f5-3a84aeb7d892" />
+<img width="400" height="400" alt="spr_baelynn_pin" src="https://github.com/user-attachments/assets/975d442a-d361-4988-915f-b8a2e8b31830" />
