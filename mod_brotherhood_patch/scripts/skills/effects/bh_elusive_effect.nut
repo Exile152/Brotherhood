@@ -3,7 +3,7 @@ this.bh_elusive_effect <- this.inherit("scripts/skills/skill", {
 	function create()
 	{
 		this.m.ID = "effects.bh_elusive";
-		this.m.Name = "Elusive";
+		this.m.Name = "Evasive";
 		this.m.Description = "The next direct attack that would hit this character misses instead.";
 		this.m.Icon = "ui/perks/bh_evasive.png";
 		this.m.IconDisabled = "ui/perks/bh_evasive_sw.png";
@@ -20,13 +20,13 @@ this.bh_elusive_effect <- this.inherit("scripts/skills/skill", {
 			id = 10,
 			type = "text",
 			icon = "ui/icons/special.png",
-			text = "The next direct attack that would hit misses instead, then Elusive is removed"
+			text = "The next direct attack that would hit misses instead, then Evasive is removed"
 		});
 		ret.push({
 			id = 11,
 			type = "text",
 			icon = "ui/icons/hitchance.png",
-			text = "Natural misses do not remove Elusive"
+			text = "Natural misses do not remove Evasive"
 		});
 		return ret;
 	}
@@ -41,12 +41,12 @@ this.bh_elusive_effect <- this.inherit("scripts/skills/skill", {
 		if (_isActive)
 		{
 			actor.fadeTo(this.createColor("ffffffb3"), 150);
-			::Brotherhood.logArmorDoctrineTest(actor, "Elusive visual applied at 70% opacity.");
+			::Brotherhood.logArmorDoctrineTest(actor, "Evasive visual applied at 70% opacity.");
 		}
 		else
 		{
 			actor.fadeToStoredColors(150);
-			::Brotherhood.logArmorDoctrineTest(actor, "Elusive visual removed and normal opacity restored.");
+			::Brotherhood.logArmorDoctrineTest(actor, "Evasive visual removed and normal opacity restored.");
 		}
 	}
 
@@ -74,7 +74,7 @@ this.bh_elusive_effect <- this.inherit("scripts/skills/skill", {
 	{
 		local actor = this.getContainer().getActor();
 		this.spawnIcon("perk_01", actor.getTile());
-		::Brotherhood.logArmorDoctrineTest(actor, "Elusive converted a hit from " + _skill.getName() + " into a miss and was removed.");
+		::Brotherhood.logArmorDoctrineTest(actor, "Evasive converted a hit from " + _skill.getName() + " into a miss and was removed.");
 		this.removeSelf();
 		return true;
 	}

@@ -9,7 +9,7 @@ if (!("Brotherhood" in getroottable())) return;
 	{ ID = "perk.bh_endurance", Name = "Endurance" }
 ];
 
-::Brotherhood.ArmorDoctrineRollCount <- 2;
+::Brotherhood.ArmorDoctrineRollCount <- 3;
 
 ::Brotherhood.isArmorDoctrine <- function( _perkID )
 {
@@ -28,10 +28,10 @@ if (!("Brotherhood" in getroottable())) return;
 		Effects = [{
 			Type = ::UPD.EffectType.Passive,
 			Description = [
-				"While the combined [Fatigue|Concept.MaximumFatigue] penalty of your head and body armor is " + ::MSU.Text.colorPositive("5") + " or less, you begin combat Elusive.",
-				"At the start of your turn, become Elusive if you are not adjacent to an enemy.",
-				"When a direct attack would hit you while Elusive, the attack misses instead and Elusive is removed.",
-				"Natural misses do not remove Elusive."
+				"While the combined [Fatigue|Concept.MaximumFatigue] penalty of your head and body armor is " + ::MSU.Text.colorPositive("5") + " or less, you begin combat Evasive.",
+				"At the start of your turn, become Evasive if you are not adjacent to an enemy.",
+				"When a direct attack would hit you while Evasive, the attack misses instead and Evasive is removed.",
+				"Natural misses do not remove Evasive."
 			]
 		}]
 	});
@@ -162,7 +162,7 @@ if (!("Brotherhood" in getroottable())) return;
 
 	// Modular Vanilla exposes the completed attack roll before hit/miss feedback
 	// and dispatch. Only convert a roll which already succeeded; natural misses
-	// therefore leave Elusive untouched and continue down the normal miss path.
+	// therefore leave Evasive untouched and continue down the normal miss path.
 	::Brotherhood.HooksMod.hook("scripts/skills/skill", function(q) {
 		q.MV_onAttackRolled = @(__original) { function MV_onAttackRolled( _attackInfo )
 		{

@@ -30,7 +30,7 @@ this.perk_bh_evasive <- this.inherit("scripts/skills/skill", {
 		if (this.getContainer().hasSkill("effects.bh_elusive")) return;
 
 		this.getContainer().add(this.new("scripts/skills/effects/bh_elusive_effect"));
-		::Brotherhood.logArmorDoctrineTest(this.getContainer().getActor(), "Gained Elusive: " + _reason + ".");
+		::Brotherhood.logArmorDoctrineTest(this.getContainer().getActor(), "Gained Evasive: " + _reason + ".");
 	}
 
 	function onCombatStarted()
@@ -43,7 +43,7 @@ this.perk_bh_evasive <- this.inherit("scripts/skills/skill", {
 		}
 		else
 		{
-			::Brotherhood.logArmorDoctrineTest(this.getContainer().getActor(), "Did not begin combat Elusive; combined armor Fatigue penalty is " + penalty.tostring() + ".");
+			::Brotherhood.logArmorDoctrineTest(this.getContainer().getActor(), "Did not begin combat Evasive; combined armor Fatigue penalty is " + penalty.tostring() + ".");
 		}
 	}
 

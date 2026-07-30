@@ -483,6 +483,7 @@
 		result.Parent <- parent;
 		realized.push(result);
 	}
+	::Brotherhood.applyArmamentLayerToParents(realized, random);
 	return realized;
 }
 

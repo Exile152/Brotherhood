@@ -46,10 +46,11 @@
 ::Brotherhood.addFleshcraftPerkData("perk.bh_dagger_mastery", 4, "cunning");
 ::Brotherhood.addFleshcraftPerkData("perk.bh_bow_mastery", 4);
 ::Brotherhood.addFleshcraftPerkData("perk.bh_underdog", 5);
+::Brotherhood.addFleshcraftPerkData("perk.lone_wolf", 5); // Obsidian T5; never seat at default tier 1
 ::Brotherhood.addFleshcraftPerkData("perk.bh_disrupt", 5, "barbarian");
 ::Brotherhood.addFleshcraftPerkData("perk.bh_lunge", 5, "barbarian");
 ::Brotherhood.addFleshcraftPerkData("perk.bh_overwhelm", 5);
-::Brotherhood.addFleshcraftPerkData("perk.bh_perfect_thrust", 5);
+::Brotherhood.addFleshcraftPerkData("perk.bh_perfect_thrust", 5); // dormant: kept for save compatibility; not Active Obsidian
 ::Brotherhood.addFleshcraftPerkData("perk.bh_footwork", 5);
 ::Brotherhood.addFleshcraftPerkData("perk.bh_medieval_medicine", 5);
 ::Brotherhood.addFleshcraftPerkData("perk.berserk", 6, "barbarian");
@@ -167,7 +168,7 @@
 
 ::Brotherhood.FleshcraftTemplates["qatal_duelist"] <- {
 	id="qatal_duelist", name="Qatal Duelist",
-	spine_pool=["perk.bh_overwhelm", "perk.bh_perfect_thrust", "perk.bh_dagger_mastery"],
+	spine_pool=["perk.bh_overwhelm", "perk.bh_dagger_mastery"],
 	flesh_pool=["perk.bh_fast_adaptation", "perk.dodge", "perk.bh_executioner", "perk.bh_feint", "perk.bh_lightweight", "perk.bh_relentless", "perk.berserk", "perk.head_hunter", "perk.bh_duelist", "perk.killing_frenzy"],
 	seats=[
 		{ id="damage", candidates=["perk.bh_lightweight", "perk.bh_executioner"] },

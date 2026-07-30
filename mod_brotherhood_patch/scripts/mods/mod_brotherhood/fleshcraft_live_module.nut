@@ -706,6 +706,12 @@ if (!("Brotherhood" in getroottable())) return;
 			::Brotherhood.addActiveObsidianPerk(_perkTree, perkID, ::Brotherhood.FleshcraftPerkTiers[perkID], "parent " + parent.TemplateID);
 		}
 	}
+	local armamentAdded = ::Brotherhood.getArmamentLayerAdded(parents);
+	foreach (perkID in armamentAdded)
+	{
+		if (identityIDs.find(perkID) == null) identityIDs.push(perkID);
+		::Brotherhood.addActiveObsidianPerk(_perkTree, perkID, ::Brotherhood.FleshcraftPerkTiers[perkID], "armament");
+	}
 
 	local existingPatchUp = [];
 	foreach (perkID in ::Brotherhood.FleshcraftPatchUpPerks) if (_perkTree.hasPerk(perkID)) existingPatchUp.push(perkID);
@@ -720,12 +726,21 @@ if (!("Brotherhood" in getroottable())) return;
 	{
 		foreach (doctrine in ::Brotherhood.selectArmorDoctrines(random))
 		{
-			if (::Brotherhood.addActiveObsidianPerk(_perkTree, doctrine.ID, 6, "Armor Doctrine")) doctrines.push(doctrine);
+			// Armor Doctrines are a separate generation layer, not Active Obsidian
+			// parent content. Seat them directly at tier 6.
+			_perkTree.addPerk(doctrine.ID, 6);
+			if (_perkTree.hasPerk(doctrine.ID))
+			{
+				doctrines.push(doctrine);
+				::Brotherhood.fleshcraftLogInfo("[Brotherhood][FLESHCRAFT][TREE ADD] perk=" + doctrine.ID + "; tier=6; source=Armor Doctrine; added=true");
+			}
+			else ::Brotherhood.fleshcraftLogInfo("[Brotherhood][FLESHCRAFT][TREE ADD] perk=" + doctrine.ID + "; tier=6; source=Armor Doctrine; added=false");
 		}
 	}
 
 	_perkTree.m.BH_SelectedFleshcraftParents <- parents;
 	_perkTree.m.BH_FleshcraftIdentityPerks <- identityIDs;
+	_perkTree.m.BH_FleshcraftArmamentAdded <- armamentAdded;
 	_perkTree.m.BH_FleshcraftDuplicateCollapses <- duplicateCollapses;
 	_perkTree.m.BH_FleshcraftWildSlotsCreated <- ::Brotherhood.WildGenerationEnabled ? 20 - identityIDs.len() : 0;
 	_perkTree.m.BH_FleshcraftDuoEligibility <- duoEligibility;
@@ -746,15 +761,23 @@ if (!("Brotherhood" in getroottable())) return;
 				+ "; contested=[" + ::Brotherhood.fleshcraftFormatIDs(parent.SeatDecisions.map(@(decision) decision.SeatID + "=" + decision.Winner)) + "]"
 				+ "; spines=[" + ::Brotherhood.fleshcraftFormatIDs(parent.SeatedSpines) + "]"
 				+ "; flesh=[" + ::Brotherhood.fleshcraftFormatIDs(parent.SeatedFlesh) + "]"
-				+ "; final_five=[" + ::Brotherhood.fleshcraftFormatIDs(parent.Half) + "]"
+				+ "; half=[" + ::Brotherhood.fleshcraftFormatIDs(parent.Half) + "]"
 			);
 		}
+		::Brotherhood.fleshcraftLogInfo(::Brotherhood.formatArmamentLayerLog(parents));
 		local collapseLog = [];
 		foreach (collapse in duplicateCollapses) collapseLog.push(collapse.PerkID + " x" + (collapse.CollapsedCount + 1));
 		local duoLog = [];
 		foreach (pair in duoEligibility) duoLog.push(pair.LeftParentID + "+" + pair.RightParentID + "=" + (pair.Eligible ? "eligible" : "overlap"));
 		local finalTree = [];
 		foreach (perkID, perk in _perkTree.getPerks()) finalTree.push(perkID + "@T" + (perk.Row + 1));
+		::Brotherhood.fleshcraftLogInfo(
+			"[Brotherhood][FLESHCRAFT][DOCTRINES] actor=" + actorName
+			+ "; selected=[" + ::Brotherhood.formatSelectedDefinitionsForLog(doctrines) + "]"
+			+ "; count=" + doctrines.len()
+			+ "; pool=" + ::Brotherhood.ArmorDoctrinePool.len()
+			+ "; roll=" + ::Brotherhood.ArmorDoctrineRollCount
+		);
 		::Brotherhood.fleshcraftLogInfo(
 			"[Brotherhood][FLESHCRAFT][TREE] actor=" + actorName
 			+ "; selected_parents=[" + ::Brotherhood.fleshcraftFormatIDs(parentIDs) + "]"

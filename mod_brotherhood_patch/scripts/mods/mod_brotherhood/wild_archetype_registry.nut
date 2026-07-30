@@ -1,8 +1,11 @@
 // Explicit archetype registry. Every real archetype is Wild-eligible when it
 // was not chosen as one of the character's native archetypes. "Wild" describes
 // when/how the package was assigned; it is not a separate archetype class.
-::Brotherhood.FINAL_PERK_TARGET <- 44;
-::Brotherhood.RESERVED_CHAOS_SLOTS <- 5;
+// Fleshcraft star Wild/Chaos fills to FINAL. Chaos rolls 1-2 per recruit
+// (see star_layer.nut); RESERVED_CHAOS_SLOTS is the max reserved for legacy
+// archetype Chaos and for computing the default pre-Chaos floor.
+::Brotherhood.FINAL_PERK_TARGET <- 40;
+::Brotherhood.RESERVED_CHAOS_SLOTS <- 2;
 ::Brotherhood.PRE_CHAOS_PERK_TARGET <- ::Brotherhood.FINAL_PERK_TARGET - ::Brotherhood.RESERVED_CHAOS_SLOTS;
 
 ::Brotherhood.WildArchetypeRegistry <- [

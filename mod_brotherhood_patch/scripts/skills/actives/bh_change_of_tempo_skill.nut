@@ -1,6 +1,6 @@
 this.bh_change_of_tempo_skill <- this.inherit("scripts/skills/skill", {
 	m = {},
-	function create() { this.m.ID = "actives.bh_change_of_tempo"; this.m.Name = "Change of Tempo"; this.m.Description = "Switch places with an adjacent ally or enemy."; this.m.Icon = "ui/perks/perk_11_active.png"; this.m.IconDisabled = "ui/perks/perk_11_active_sw.png"; this.m.Overlay = "perk_11_active"; this.m.Type = this.Const.SkillType.Active; this.m.Order = this.Const.SkillOrder.Any - 1; this.m.IsActive = true; this.m.IsTargeted = true; this.m.IsIgnoredAsAOO = true; this.m.IsUsingHitchance = false; this.m.ActionPointCost = 3; this.m.FatigueCost = 20; this.m.MinRange = 1; this.m.MaxRange = 1; }
+	function create() { this.m.ID = "actives.bh_change_of_tempo"; this.m.Name = "Change of Tempo"; this.m.Description = "Switch places with an adjacent ally or enemy."; this.m.Icon = "skills/bh_change_of_tempo.png"; this.m.IconDisabled = "skills/bh_change_of_tempo_sw.png"; this.m.Overlay = "bh_change_of_tempo"; this.m.Type = this.Const.SkillType.Active; this.m.Order = this.Const.SkillOrder.Any - 1; this.m.IsActive = true; this.m.IsTargeted = true; this.m.IsIgnoredAsAOO = true; this.m.IsUsingHitchance = false; this.m.ActionPointCost = 3; this.m.FatigueCost = 20; this.m.MinRange = 1; this.m.MaxRange = 1; }
 	function getTooltip() { return this.getDefaultUtilityTooltip(); }
 	function getCursorForTile( _tile ) { return this.Const.UI.Cursor.Rotation; }
 	function isUsable() { return this.skill.isUsable() && !this.getContainer().getActor().getCurrentProperties().IsRooted; }

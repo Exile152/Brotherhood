@@ -118,6 +118,7 @@
 	{
 		foreach (record in _perkTree.m.BH_WildSources)
 		{
+			if (("PlayerHidden" in record) && record.PlayerHidden) continue;
 			if (record.AddedPerkIDs.find(_perkID) == null || record.SourceArchetypeID in seenWild) continue;
 			seenWild[record.SourceArchetypeID] <- true;
 			ret.Wild.push({ ID = record.SourceArchetypeID, Name = record.SourceArchetypeName });
@@ -129,6 +130,9 @@
 
 ::Brotherhood.decoratePerkTreeUIWithArchetypeProvenance <- function( _perkTree, _uiData )
 {
+	// Fleshcraft presents one unified deal; never paint Wild/Chaos/archetype overlays.
+	if (::Brotherhood.isFleshcraftPerkTree(_perkTree)) return _uiData;
+
 	::Brotherhood.restoreNativeArchetypeProvenance(_perkTree);
 	local rolledArchetypes = [];
 	if ("BH_SelectedArchetypes" in _perkTree.m)
@@ -299,6 +303,8 @@
 	if (actor == null) return _tooltip;
 	local perkTree = actor.getPerkTree();
 	if (!::Brotherhood.isTestingPerkTree(perkTree)) return _tooltip;
+	// Fleshcraft trees are one deal: never label Wild / Chaos / Star for players.
+	if (::Brotherhood.isFleshcraftPerkTree(perkTree)) return _tooltip;
 
 	local provenance = ::Brotherhood.getPerkArchetypeProvenance(perkTree, _perkID);
 	local isChaos = ::Brotherhood.isChaosPerkForActor(perkTree, actor, _perkID);
@@ -669,8 +675,16 @@
 				if (::Brotherhood.FleshcraftDebugLogging) ::logInfo("[Brotherhood][OBSIDIAN DEBUG SPAWN] Wild generation skipped so only current Obsidian archetypes appear.");
 				return ret;
 			}
-			if (::Brotherhood.WildGenerationEnabled) ::Brotherhood.fillWildPerksToPreChaosTarget(this);
-			if (::Brotherhood.ChaosGenerationEnabled) ::Brotherhood.fillChaosPerksToFinalTarget(this);
+			if (isFleshcraft)
+			{
+				if (::Brotherhood.WildGenerationEnabled || ::Brotherhood.ChaosGenerationEnabled)
+					::Brotherhood.fillFleshcraftStarWildAndChaos(this);
+			}
+			else
+			{
+				if (::Brotherhood.WildGenerationEnabled) ::Brotherhood.fillWildPerksToPreChaosTarget(this);
+				if (::Brotherhood.ChaosGenerationEnabled) ::Brotherhood.fillChaosPerksToFinalTarget(this);
+			}
 			return ret;
 		}}.build;
 
@@ -683,7 +697,11 @@
 				if (!::Brotherhood.isFleshcraftPerkTree(this)) return __original();
 			}
 			else if (!::Brotherhood.isTestingPerkTree(this) || !("BH_SelectedArchetypes" in this.m)) return __original();
-			if (::Brotherhood.ChaosGenerationEnabled && (!("BH_ChaosReconciled" in this.m) || !this.m.BH_ChaosReconciled)) ::Brotherhood.fillChaosPerksToFinalTarget(this);
+			if (::Brotherhood.ChaosGenerationEnabled && (!("BH_ChaosReconciled" in this.m) || !this.m.BH_ChaosReconciled))
+			{
+				if (isFleshcraft) ::Brotherhood.fillFleshcraftStarWildAndChaos(this);
+				else ::Brotherhood.fillChaosPerksToFinalTarget(this);
+			}
 			::Brotherhood.sanitizeWheelPerkTreeGroups(this);
 			local ret = __original();
 			return ::Brotherhood.decoratePerkTreeUIWithArchetypeProvenance(this, ret);

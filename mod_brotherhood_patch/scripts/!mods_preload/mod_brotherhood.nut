@@ -1,5 +1,5 @@
 ::Brotherhood <- {
-	Version = "0.2.96",
+	Version = "0.2.98",
 	ID = "mod_brotherhood",
 	Name = "Brotherhood",
 	Mod = null,
@@ -12,11 +12,10 @@
 	// The real Fleshcraft generator replaces Reforged player perk-tree rolls.
 	// Disable this one flag to restore Reforged generation without touching data.
 	FleshcraftGenerationEnabled = true,
-	// Temporary integration controls. Parent generation remains live, while
-	// Wild, Chaos, and the untracked Armor Doctrine layer stay dormant.
-	WildGenerationEnabled = false,
-	ChaosGenerationEnabled = false,
-	ArmorDoctrineGenerationEnabled = false,
+	// Star-weighted Wild fills toward FINAL-chaos; Chaos is 1-2 dissonant perks.
+	WildGenerationEnabled = true,
+	ChaosGenerationEnabled = true,
+	ArmorDoctrineGenerationEnabled = true,
 	ParentGenerationDebugLogging = true,
 	ParentGenerationDetailedDebugLogging = true,
 	ParentGenerationDebugShowOnCharacter = true,
@@ -2374,9 +2373,11 @@
 ::include("scripts/mods/mod_brotherhood/latest_obsidian_archetypes_module");
 ::include("scripts/mods/mod_brotherhood/armor_doctrine_module");
 ::include("scripts/mods/mod_brotherhood/active_obsidian_perks");
+::include("scripts/mods/mod_brotherhood/perk_stars_data");
 ::include("scripts/mods/mod_brotherhood/perk_debug_logging");
 ::include("scripts/mods/mod_brotherhood/native_obsidian_perks_module");
 ::include("scripts/mods/mod_brotherhood/parent_profile_data");
+::include("scripts/mods/mod_brotherhood/parent_recognition_calibration");
 ::include("scripts/mods/mod_brotherhood/parent_profiles");
 ::include("scripts/mods/mod_brotherhood/parent_rng");
 ::include("scripts/mods/mod_brotherhood/parent_resolver");
@@ -2384,6 +2385,7 @@
 ::include("scripts/mods/mod_brotherhood/parent_generation_live");
 ::include("scripts/mods/mod_brotherhood/fleshcraft_data");
 ::include("scripts/mods/mod_brotherhood/fleshcraft_engine");
+::include("scripts/mods/mod_brotherhood/armament_layer");
 ::include("scripts/mods/mod_brotherhood/fleshcraft_live_module");
 ::include("scripts/mods/mod_brotherhood/scenario_presentation_module");
 ::include("scripts/mods/mod_brotherhood/archetype_test_pool");
@@ -2392,6 +2394,7 @@
 ::include("scripts/mods/mod_brotherhood/duo_generator");
 ::include("scripts/mods/mod_brotherhood/chaos_generator");
 ::include("scripts/mods/mod_brotherhood/wild_generator");
+::include("scripts/mods/mod_brotherhood/star_layer");
 
 ::Brotherhood.HooksMod.queue(">mod_reforged", function() {
 	::Brotherhood.Mod = ::MSU.Class.Mod(::Brotherhood.ID, ::Brotherhood.Version, ::Brotherhood.Name);
@@ -3533,6 +3536,11 @@
 				{
 					::Brotherhood.keepOnlyTestingGroup(_perkID);
 				}
+
+				// Obsidian Lone Wolf is T5. Default addPerk tier is 1; coerce on
+				// Fleshcraft trees so background/legacy callers cannot bury it in T1.
+				if (::Brotherhood.isFleshcraftPerkTree(this) && _perkID == "perk.lone_wolf")
+					_tier = 5;
 
 				local ret = __original(_perkID, _tier, _ignoreMaxWidth);
 

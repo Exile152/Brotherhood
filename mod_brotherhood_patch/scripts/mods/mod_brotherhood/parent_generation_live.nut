@@ -1,7 +1,8 @@
 if (!("Brotherhood" in getroottable())) return;
 
-::Brotherhood.ParentGenerationStorageVersion <- 2;
+::Brotherhood.ParentGenerationStorageVersion <- 3;
 ::Brotherhood.ParentGenerationFlagPrefix <- "BH_ParentGeneration_";
+::Brotherhood.ParentPreviousGroup <- null;
 
 ::Brotherhood.parentFormatFitness <- function( _value )
 {
@@ -86,6 +87,15 @@ if (!("Brotherhood" in getroottable())) return;
 	return ret;
 }
 
+::Brotherhood.parentSerializeSharedFuture <- function( _stats )
+{
+	if (_stats == null) return "";
+	local entries = [];
+	foreach (attribute in ::Brotherhood.ParentAttributes)
+		if (attribute.Name in _stats) entries.push(attribute.Name + "=" + ::format("%.6f", _stats[attribute.Name].tofloat()));
+	return ::Brotherhood.parentJoin(entries, "|");
+}
+
 ::Brotherhood.storeParentGenerationData <- function( _actor, _selection )
 {
 	local ids = _selection.Selected.map(@(_score) _score.Profile.ID);
@@ -93,16 +103,22 @@ if (!("Brotherhood" in getroottable())) return;
 	local rawScores = ::Brotherhood.parentSerializeScores(_selection.Rankings, _selection.Rejected);
 	local flags = _actor.getFlags();
 	local prefix = ::Brotherhood.ParentGenerationFlagPrefix;
+	local anchorID = _selection.Anchor == null ? "" : _selection.Anchor.Profile.ID;
+	local sharedFuture = ::Brotherhood.parentSerializeSharedFuture(_selection.SharedFuture);
 	flags.set(prefix + "Version", ::Brotherhood.ParentGenerationStorageVersion);
 	flags.set(prefix + "Seed", _selection.Body.Seed);
 	flags.set(prefix + "ParentIDs", rawIDs);
 	flags.set(prefix + "Scores", rawScores);
 	flags.set(prefix + "ProfileFingerprint", ::Brotherhood.ParentProfileSource.Fingerprint);
 	flags.set(prefix + "RollFingerprint", _selection.RollSheetFingerprint);
+	flags.set(prefix + "AnchorID", anchorID);
+	flags.set(prefix + "SharedFuture", sharedFuture);
+	if (_selection.RecognitionFingerprint != null) flags.set(prefix + "RecognitionFingerprint", _selection.RecognitionFingerprint);
 	_actor.m.BH_ParentGenerationData = {
 		Version=::Brotherhood.ParentGenerationStorageVersion, Seed=_selection.Body.Seed, ParentIDs=ids,
 		Scores=::Brotherhood.parentDeserializeScores(rawScores), ProfileFingerprint=::Brotherhood.ParentProfileSource.Fingerprint,
-		RollFingerprint=_selection.RollSheetFingerprint, Selection=_selection
+		RollFingerprint=_selection.RollSheetFingerprint, AnchorID=anchorID, SharedFuture=sharedFuture,
+		RecognitionFingerprint=_selection.RecognitionFingerprint, Selection=_selection
 	};
 	return _actor.m.BH_ParentGenerationData;
 }
@@ -119,7 +135,11 @@ if (!("Brotherhood" in getroottable())) return;
 		Version=flags.get(prefix + "Version"), Seed=flags.has(prefix + "Seed") ? flags.get(prefix + "Seed") : null, ParentIDs=ids,
 		Scores=::Brotherhood.parentDeserializeScores(flags.has(prefix + "Scores") ? flags.get(prefix + "Scores") : ""),
 		ProfileFingerprint=flags.has(prefix + "ProfileFingerprint") ? flags.get(prefix + "ProfileFingerprint") : null,
-		RollFingerprint=flags.has(prefix + "RollFingerprint") ? flags.get(prefix + "RollFingerprint") : null, Selection=null
+		RollFingerprint=flags.has(prefix + "RollFingerprint") ? flags.get(prefix + "RollFingerprint") : null,
+		AnchorID=flags.has(prefix + "AnchorID") ? flags.get(prefix + "AnchorID") : null,
+		SharedFuture=flags.has(prefix + "SharedFuture") ? flags.get(prefix + "SharedFuture") : null,
+		RecognitionFingerprint=flags.has(prefix + "RecognitionFingerprint") ? flags.get(prefix + "RecognitionFingerprint") : null,
+		Selection=null
 	};
 	return _actor.m.BH_ParentGenerationData;
 }
@@ -140,40 +160,46 @@ if (!("Brotherhood" in getroottable())) return;
 	foreach (score in _selection.Rankings) scores.push(score.Profile.ID + "=" + ::Brotherhood.parentFormatFitness(score.ParentFitness));
 	foreach (score in _selection.Rejected) scores.push(score.Profile.ID + "=ineligible");
 	local selected = _selection.Selected.map(@(_score) _score.Profile.ID);
-	::logInfo("[Brotherhood][PARENT] Recruit=" + body.RecruitName + " (UID " + body.RecruitUID + "); background=" + body.BackgroundName + " [" + body.BackgroundID + "]; traits=[" + ::Brotherhood.parentJoin(body.TraitIDs, ",") + "]; raw_stats/stars={" + ::Brotherhood.parentJoin(stats, ", ") + "}; final_scores={" + ::Brotherhood.parentJoin(scores, ", ") + "}; selected=[" + ::Brotherhood.parentJoin(selected, ",") + "]; seed=" + body.Seed);
+	local anchorID = _selection.Anchor == null ? "null" : _selection.Anchor.Profile.ID;
+	::logInfo("[Brotherhood][PARENT] Recruit=" + body.RecruitName + " (UID " + body.RecruitUID + "); background=" + body.BackgroundName + " [" + body.BackgroundID + "]; traits=[" + ::Brotherhood.parentJoin(body.TraitIDs, ",") + "]; raw_stats/stars={" + ::Brotherhood.parentJoin(stats, ", ") + "}; anchor=" + anchorID + "; selected=[" + ::Brotherhood.parentJoin(selected, ",") + "]; seed=" + body.Seed + "; fallback=" + (_selection.Fallback == null ? "none" : _selection.Fallback));
 	if (!::Brotherhood.ParentGenerationDetailedDebugLogging) return;
 
-	local ties = {};
-	foreach (score in _selection.Rankings)
+	foreach (cost in _selection.ProposalCosts)
 	{
-		local key = ::format("%.12f", score.ParentFitness);
-		if (!(key in ties)) ties[key] <- [];
-		ties[key].push(score.Profile.ID);
+		::logInfo("[Brotherhood][PARENT][RECOGNITION] parent=" + cost.Profile.ID + "; value=" + ::format("%.4f", cost.Recognition.Value) + "; qualified=" + cost.Recognition.Qualified + "; anchor_evidence=" + cost.AnchorRecognitionQualified + "; jointly=" + cost.JointlyQualified + "; reason=" + cost.Recognition.Reason);
+		::logInfo("[Brotherhood][PARENT][REACHABILITY] parent=" + cost.Profile.ID + "; value=" + ::format("%.4f", cost.Reachability.Value) + "; qualified=" + cost.Reachability.Qualified + "; reason=" + cost.Reachability.Reason);
+		if (cost.Profile.ConjunctiveFitness != null)
+		{
+			local sides = [];
+			foreach (side in cost.Recognition.AptitudeSourceValues) sides.push(side.Name + "=" + ::format("%.1f", side.Value));
+			::logInfo("[Brotherhood][PARENT][HYBRID] parent=" + cost.Profile.ID + "; projected_sides={" + ::Brotherhood.parentJoin(sides, ",") + "}; recognition_qualified=" + cost.Recognition.Qualified + "; anchor_evidence_qualified=" + cost.AnchorRecognitionQualified);
+		}
 	}
-	foreach (fitness, ids in ties) if (ids.len() > 1) ::logInfo("[Brotherhood][PARENT][TIE] fitness=" + fitness + "; exact_tie=[" + ::Brotherhood.parentJoin(ids, ",") + "]");
-
+	::logInfo("[Brotherhood][PARENT][ANCHOR] id=" + anchorID + "; fallback=" + _selection.AnchorFallback + "; recognition_fingerprint=" + (_selection.RecognitionFingerprint == null ? "null" : _selection.RecognitionFingerprint));
+	if (_selection.SharedFuture != null)
+	{
+		local future = [];
+		foreach (attribute in ::Brotherhood.ParentAttributes) future.push(attribute.Name + "=" + _selection.SharedFuture[attribute.Name]);
+		::logInfo("[Brotherhood][PARENT][SHARED_FUTURE] {" + ::Brotherhood.parentJoin(future, ",") + "}");
+	}
 	foreach (development in _selection.Developments)
 	{
-		local score = development.FinalScore;
-		local projected = [];
 		local allocation = [];
-		foreach (attribute in ::Brotherhood.ParentAttributes)
-		{
-			projected.push(attribute.Name + "=" + development.FinalStats[attribute.Name]);
-			allocation.push(attribute.Name + ":+" + development.Increases[attribute.Name] + "/" + development.Counts[attribute.Name] + "x");
-		}
-		local components = [];
-		foreach (item in score.Contributions) components.push(item.Label + "=" + item.StatName + "(" + item.Match.Actual + "," + item.Match.Band + ",fit=" + ::Brotherhood.parentFormatFitness(item.Match.Fitness) + ",importance=" + item.Importance + ",weighted=" + ::Brotherhood.parentFormatFitness(item.WeightedFitness) + ")");
-		local routing = [];
-		foreach (claim in development.Profile.RoutingClaims)
-		{
-			local actual = claim.Stat in development.FinalStats ? development.FinalStats[claim.Stat] : null;
-			routing.push(claim.Name + ":" + claim.Stat + "=" + actual + "<" + claim.ActivatesBelow + ",fit=" + ::Brotherhood.parentRoutingFitness(actual, claim.ActivatesBelow) + ",importance=" + claim.Importance);
-		}
 		local choices = [];
+		foreach (attribute in ::Brotherhood.ParentAttributes) allocation.push(attribute.Name + ":+" + development.Increases[attribute.Name] + "/" + development.Counts[attribute.Name] + "x");
 		foreach (decision in development.Decisions) choices.push("L" + decision.Level + ":" + ::Brotherhood.parentJoin(decision.Attributes, "+"));
-		::logInfo("[Brotherhood][PARENT][DETAIL] parent=" + development.Profile.ID + "; start=" + ::Brotherhood.parentFormatFitness(development.StartingScore.ParentFitness) + "; final=" + ::Brotherhood.parentFormatFitness(score.ParentFitness) + "; base=" + ::Brotherhood.parentFormatFitness(score.BaseFitness) + "; routing_normalization=" + ::Brotherhood.parentFormatFitness(score.RoutingNormalization) + "; routing_bonus=" + ::Brotherhood.parentFormatFitness(score.RoutingBonus) + "; projected={" + ::Brotherhood.parentJoin(projected, ",") + "}; allocation={" + ::Brotherhood.parentJoin(allocation, ",") + "}; components=[" + ::Brotherhood.parentJoin(components, ";") + "]; routing=[" + ::Brotherhood.parentJoin(routing, ";") + "]; choices=[" + ::Brotherhood.parentJoin(choices, ",") + "]");
+		::logInfo("[Brotherhood][PARENT][DEVELOP] parent=" + development.Profile.ID + "; allocation={" + ::Brotherhood.parentJoin(allocation, ",") + "}; choices=[" + ::Brotherhood.parentJoin(choices, ",") + "]");
 	}
+	foreach (item in _selection.SecondaryDiagnostics)
+		::logInfo("[Brotherhood][PARENT][SECONDARY] parent=" + item.Profile.ID + "; identity=" + item.IdentityQualified + "; selected=" + item.Selected + "; fallback=" + item.Fallback + "; fitness=" + ::Brotherhood.parentFormatFitness(item.SharedFitness) + "; reason=" + item.Reason + "; evidence=[" + ::Brotherhood.parentJoin(item.IdentityEvidence, ";") + "]");
+	if (_selection.TempoRecognition != null)
+		::logInfo("[Brotherhood][PARENT][TEMPO] tier=" + _selection.TempoRecognition.Tier + "; eligible=" + _selection.TempoRecognition.Eligible + "; credible=" + _selection.TempoRecognition.CredibleNormalClaims + "; great=" + _selection.TempoRecognition.GreatNormalMatches + "; premium=" + _selection.TempoRecognition.PremiumNormalMatches + "; bad_axes=[" + ::Brotherhood.parentJoin(_selection.TempoRecognition.BadCombatAxes, ",") + "]; reason=" + _selection.TempoRecognition.Reason);
+	foreach (trace in _selection.SaturationTrace)
+		::logInfo("[Brotherhood][PARENT][SATURATION] seat=" + trace.Seat + "; winner=" + trace.WinnerID + "; raw=" + ::Brotherhood.parentFormatFitness(trace.RawFitness) + "; adjusted=" + ::Brotherhood.parentFormatFitness(trace.AdjustedFitness) + "; changed=" + trace.ChangedWinner);
+	local group = _selection.GroupSaturation;
+	if (group != null)
+		::logInfo("[Brotherhood][PARENT][GROUP] previous=[" + ::Brotherhood.parentJoin(group.PreviousGroup, ",") + "]; baseline=[" + ::Brotherhood.parentJoin(group.BaselineGroup, ",") + "]; selected=[" + ::Brotherhood.parentJoin(group.SelectedGroup, ",") + "]; overlap=" + group.OverlapBefore + "->" + group.OverlapAfter + "; multiplier=" + group.Multiplier + "; changed=" + group.ChangedGroup);
+	::logInfo("[Brotherhood][PARENT][FALLBACK] " + (_selection.Fallback == null ? "none" : _selection.Fallback));
 	foreach (screen in _selection.Screens)
 	{
 		local rolls = [];
@@ -190,7 +216,11 @@ if (!("Brotherhood" in getroottable())) return;
 	try
 	{
 		local body = ::Brotherhood.captureParentBody(_actor);
-		local selection = ::Brotherhood.generateParentSelection(body, ::Brotherhood.ParentProfiles, 4);
+		local selection = ::Brotherhood.generateParentSelection(body, ::Brotherhood.ParentProfiles, 4, null, {
+			PreviousGroup = ::Brotherhood.ParentPreviousGroup,
+			RunSeed = body.Seed,
+			BodyIndex = 0
+		});
 		if (selection.Selected.len() != 4)
 		{
 			::logWarning("[Brotherhood][PARENT] Only " + selection.Selected.len() + " valid parents were available for " + body.RecruitName + "; no default was substituted and Reforged generation will be used.");
@@ -199,7 +229,10 @@ if (!("Brotherhood" in getroottable())) return;
 		local data = ::Brotherhood.storeParentGenerationData(_actor, selection);
 		local readBack = ::Brotherhood.restoreParentGenerationData(_actor);
 		if (readBack == null || ::Brotherhood.parentJoin(readBack.ParentIDs, "|") != ::Brotherhood.parentJoin(data.ParentIDs, "|")) throw "stored parent data failed immediate read-back verification";
+		if (readBack.AnchorID != data.AnchorID) throw "stored anchor id failed immediate read-back verification";
+		if (readBack.SharedFuture != data.SharedFuture) throw "stored shared future failed immediate read-back verification";
 		_actor.m.BH_ParentGenerationData.Selection = selection;
+		::Brotherhood.ParentPreviousGroup = selection.Selected.map(@(_score) _score.Profile.ID);
 		if (::Brotherhood.ParentGenerationDebugLogging) ::Brotherhood.logParentGenerationReport(selection);
 		return _actor.m.BH_ParentGenerationData;
 	}
@@ -213,7 +246,17 @@ if (!("Brotherhood" in getroottable())) return;
 ::Brotherhood.initializeParentGeneration <- function()
 {
 	::Brotherhood.loadParentProfiles();
-	if (::Brotherhood.TestingMode && ::Brotherhood.ParentGenerationRunParityFixture) ::Brotherhood.runParentParityFixture();
+	if (::Brotherhood.TestingMode && ::Brotherhood.ParentGenerationRunParityFixture)
+	{
+		try
+		{
+			::Brotherhood.runParentParityFixture();
+		}
+		catch (error)
+		{
+			::logError("[Brotherhood][PARENT][PARITY] Boot parity check failed without blocking generation: " + error);
+		}
+	}
 	::Brotherhood.HooksMod.hook("scripts/entity/tactical/player", function(q) {
 		q.m.BH_ParentGenerationData <- null;
 		q.onDeserialize = @(__original) { function onDeserialize( _in )
